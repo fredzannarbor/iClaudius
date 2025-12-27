@@ -141,7 +141,7 @@ struct DetailView: View {
                 AccountInfoView(accountInfo: viewModel.config.accountInfo)
             // Control Plane sections
             case .controlPlane:
-                ControlPlaneOverview(cpConfig: viewModel.cpConfig)
+                ControlPlaneOverview(cpConfig: viewModel.cpConfig, viewModel: viewModel)
             case .safety:
                 if let dashboard = viewModel.cpConfig.safetyDashboard {
                     SafetyDashboardView(dashboard: dashboard)

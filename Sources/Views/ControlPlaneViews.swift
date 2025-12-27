@@ -4,6 +4,8 @@ import SwiftUI
 
 struct ControlPlaneOverview: View {
     let cpConfig: ControlPlaneConfiguration
+    @ObservedObject var viewModel: ConfigViewModel
+    @State private var showConflictDetails = false
 
     var body: some View {
         ScrollView {
@@ -24,27 +26,106 @@ struct ControlPlaneOverview: View {
 
                 // Health Summary
                 GroupBox {
-                    HStack {
-                        Image(systemName: cpConfig.overallHealth.icon)
-                            .font(.title2)
-                            .foregroundColor(colorFor(cpConfig.overallHealth.color))
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: cpConfig.overallHealth.icon)
+                                .font(.title2)
+                                .foregroundColor(colorFor(cpConfig.overallHealth.color))
 
-                        VStack(alignment: .leading) {
-                            Text("System Health")
-                                .font(.headline)
-                            Text(cpConfig.overallHealth.rawValue)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                            VStack(alignment: .leading) {
+                                Text("System Health")
+                                    .font(.headline)
+                                Text(cpConfig.overallHealth.rawValue)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing) {
+                                Text("\(cpConfig.entities.count) entities")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+
+                                // Conflicts - clickable if there are any
+                                if cpConfig.conflictCount > 0 {
+                                    Button(action: { withAnimation { showConflictDetails.toggle() } }) {
+                                        HStack(spacing: 4) {
+                                            Text("\(cpConfig.conflictCount) conflict\(cpConfig.conflictCount == 1 ? "" : "s")")
+                                                .font(.caption)
+                                                .fontWeight(.medium)
+                                            Image(systemName: showConflictDetails ? "chevron.up" : "chevron.down")
+                                                .font(.caption2)
+                                        }
+                                        .foregroundColor(.orange)
+                                    }
+                                    .buttonStyle(.plain)
+                                } else {
+                                    Text("No conflicts")
+                                        .font(.caption)
+                                        .foregroundColor(.green)
+                                }
+                            }
                         }
 
-                        Spacer()
+                        // Expanded conflict details
+                        if showConflictDetails && !cpConfig.conflicts.isEmpty {
+                            Divider()
 
-                        VStack(alignment: .trailing) {
-                            Text("\(cpConfig.entities.count) entities")
-                            Text("\(cpConfig.conflictCount) conflicts")
-                                .foregroundColor(cpConfig.conflictCount > 0 ? .orange : .secondary)
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Detected Conflicts")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+
+                                ForEach(cpConfig.conflicts) { conflict in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack {
+                                            Circle()
+                                                .fill(colorFor(conflict.severity.color))
+                                                .frame(width: 8, height: 8)
+                                            Text(conflict.type.rawValue)
+                                                .font(.caption)
+                                                .fontWeight(.medium)
+                                        }
+
+                                        Text(conflict.description)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+
+                                        if let resolution = conflict.resolution {
+                                            HStack(alignment: .top, spacing: 6) {
+                                                Image(systemName: "lightbulb")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.yellow)
+                                                Text(resolution)
+                                                    .font(.caption2)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                    }
+                                    .padding(10)
+                                    .background(colorFor(conflict.severity.color).opacity(0.1))
+                                    .cornerRadius(8)
+                                }
+
+                                // Navigation button
+                                Button(action: {
+                                    viewModel.selectedSection = .dependencies
+                                }) {
+                                    HStack {
+                                        Image(systemName: "arrow.right.circle.fill")
+                                        Text("View Full Dependency Analysis")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.accentColor.opacity(0.15))
+                                    .cornerRadius(6)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .font(.caption)
                     }
                     .padding(.vertical, 4)
                 }
