@@ -290,17 +290,321 @@ struct SuggestionCard: View {
 
     func generateCommandTemplate(for suggestion: CustomizationSuggestion) -> String {
         let name = extractCommandName(from: suggestion.title)
-        return """
-        \(suggestion.description)
 
-        ## Usage
-        /\(name)
+        // Generate specific, useful content based on the suggestion
+        switch name {
+        case "review-pr":
+            return """
+            Review the current pull request and provide actionable feedback.
 
-        ## Steps
-        1. [Describe what this command does]
-        2. [Add implementation details]
-        3. [Provide expected output]
-        """
+            ## Instructions
+
+            1. First, get the current branch and find the associated PR:
+               ```bash
+               gh pr view --json number,title,body,files
+               ```
+
+            2. Analyze the changes in this PR:
+               - Review each modified file for bugs, security issues, and code quality
+               - Check for proper error handling and edge cases
+               - Verify naming conventions and code style consistency
+               - Look for potential performance issues
+
+            3. Provide a structured review with:
+               - **Summary**: Brief overview of what the PR does
+               - **Strengths**: What's done well
+               - **Issues**: Problems that should be fixed (with line references)
+               - **Suggestions**: Optional improvements
+               - **Verdict**: Approve, Request Changes, or Comment
+
+            4. Format feedback as GitHub-compatible markdown that can be posted as a review comment.
+
+            ## Example Output
+            ```
+            ## PR Review: Add user authentication
+
+            ### Summary
+            This PR implements JWT-based authentication...
+
+            ### Issues
+            - `src/auth.ts:45` - Password not hashed before storage
+            - `src/routes.ts:12` - Missing rate limiting on login endpoint
+
+            ### Verdict: Request Changes
+            ```
+            """
+
+        case "fitness-summary":
+            return """
+            Generate a weekly fitness and health summary from tracked metrics.
+
+            ## Instructions
+
+            1. Read the health data from the configured data store (check ~/.claude/CLAUDE.md for location)
+
+            2. Aggregate the past 7 days of data for:
+               - Weight trends (if tracked)
+               - Blood pressure readings (if tracked)
+               - Exercise/activity logs
+               - Sleep data (if available)
+               - Any custom metrics
+
+            3. Generate a summary report including:
+               - **Weekly Overview**: Key stats at a glance
+               - **Trends**: Are metrics improving, stable, or declining?
+               - **Achievements**: Goals met or personal bests
+               - **Insights**: Patterns noticed (e.g., "BP lower on days with morning walks")
+               - **Focus for Next Week**: One actionable recommendation
+
+            4. Format as a clean markdown report suitable for personal review.
+
+            ## Output Format
+            ```markdown
+            # Weekly Health Summary: [Date Range]
+
+            ## At a Glance
+            | Metric | This Week | Last Week | Trend |
+            |--------|-----------|-----------|-------|
+            | Weight | 185.2 lbs | 186.1 lbs | ↓ 0.9 |
+
+            ## Insights
+            - Your blood pressure averaged 118/76, within healthy range
+            - Activity was highest on Tuesday and Thursday
+
+            ## Next Week Focus
+            Consider adding one more cardio session...
+            ```
+            """
+
+        case "budget-forecast":
+            return """
+            Generate a financial forecast based on historical spending patterns.
+
+            ## Instructions
+
+            1. Access the financial data from the budget system (check Financial Survival Planner or configured location)
+
+            2. Analyze the past 3-6 months of:
+               - Income sources and amounts
+               - Fixed expenses (rent, subscriptions, etc.)
+               - Variable expenses by category
+               - Seasonal patterns (holidays, quarterly bills)
+
+            3. Generate a forecast for the next 1-3 months:
+               - **Projected Income**: Expected earnings
+               - **Projected Expenses**: By category with confidence levels
+               - **Net Cash Flow**: Surplus or deficit prediction
+               - **Risk Factors**: Unusual upcoming expenses or income gaps
+
+            4. Provide actionable recommendations:
+               - Areas where spending can be reduced
+               - Bills that could be renegotiated
+               - Savings opportunities
+
+            ## Output Format
+            ```markdown
+            # Financial Forecast: [Next Month]
+
+            ## Projected Cash Flow
+            - Expected Income: $X,XXX
+            - Expected Expenses: $X,XXX
+            - Net: +/- $XXX
+
+            ## By Category
+            | Category | Projected | vs. Avg | Confidence |
+            |----------|-----------|---------|------------|
+            | Housing  | $1,500    | =       | High       |
+            | Food     | $450      | +$50    | Medium     |
+
+            ## Recommendations
+            1. Streaming subscriptions total $85/mo - consider consolidating
+            ```
+            """
+
+        case "weekly-reflection":
+            return """
+            Conduct a weekly reflection on commitments, progress, and intentions.
+
+            ## Instructions
+
+            1. Review the followthrough/accountability data from the past week:
+               - Commitments made and their status
+               - Tasks completed vs. planned
+               - Patterns in what got done vs. what slipped
+
+            2. Guide a structured reflection:
+
+               **What Went Well**
+               - Which commitments were honored?
+               - What enabled success?
+
+               **What Was Challenging**
+               - What commitments were missed or delayed?
+               - What got in the way?
+
+               **Patterns Noticed**
+               - Are certain types of commitments consistently harder?
+               - What time of day/week is most productive?
+
+               **Intentions for Next Week**
+               - What are the top 3 priorities?
+               - What will you do differently?
+               - What support do you need?
+
+            3. Store the reflection in a designated location for future reference.
+
+            ## Output Format
+            ```markdown
+            # Weekly Reflection: Week of [Date]
+
+            ## Wins 🎉
+            - Completed the API refactor ahead of schedule
+            - Maintained morning exercise routine (5/7 days)
+
+            ## Challenges 🤔
+            - Documentation updates pushed to next week again
+            - Evening commitments consistently deprioritized
+
+            ## Pattern
+            I notice I'm more likely to complete tasks with external deadlines...
+
+            ## Next Week Intentions
+            1. Ship documentation by Wednesday
+            2. Block 30 min each evening for personal projects
+            3. Say no to at least one new commitment
+            ```
+            """
+
+        case "ux-test-terminal", "ux-test":
+            return """
+            Run a virtual user testing session for a terminal/CLI application.
+
+            ## Instructions
+
+            1. Identify the CLI tool or terminal workflow to test
+
+            2. Create 3-5 virtual user personas with varying technical levels:
+               - **Novice**: First-time user, unfamiliar with CLI conventions
+               - **Intermediate**: Comfortable with terminal, new to this tool
+               - **Expert**: Power user, looking for efficiency
+               - **Accessibility**: User relying on screen reader
+
+            3. For each persona, simulate their experience:
+               - First impressions of help text and documentation
+               - Attempting common tasks
+               - Error recovery and feedback clarity
+               - Discoverability of features
+
+            4. Document findings:
+
+               **Friction Points**: Where users get stuck or confused
+               **Delights**: Unexpectedly good experiences
+               **Accessibility Issues**: Problems for users with disabilities
+               **Suggestions**: Specific improvements with priority
+
+            ## Output Format
+            ```markdown
+            # UX Test Report: [CLI Tool Name]
+
+            ## Persona: Novice User (Pat)
+            ### Task: Install and run first command
+            - ❌ Help text assumes familiarity with flags
+            - ❌ Error message "ENOENT" unhelpful
+            - ✅ Tab completion discovered accidentally, very helpful
+
+            ## Summary
+            | Issue | Severity | Effort | Priority |
+            |-------|----------|--------|----------|
+            | Unclear error messages | High | Low | P0 |
+            | No --help examples | Medium | Low | P1 |
+            ```
+            """
+
+        case "model-selector":
+            return """
+            Help select the appropriate LLM model for the current task.
+
+            ## Model Selection Guidelines
+
+            When choosing a model, consider these factors:
+
+            ### Task Complexity vs. Cost
+
+            | Task Type | Recommended Model | Reasoning |
+            |-----------|-------------------|-----------|
+            | Simple extraction, formatting | haiku | Fast, cheap, sufficient |
+            | Code generation, analysis | sonnet | Good balance of capability/cost |
+            | Complex reasoning, planning | opus | Highest capability needed |
+            | High-volume content | deepseek/deepseek-chat | Cost-effective for bulk |
+            | Image generation | gemini-3.0-image-* | Specialized capability |
+
+            ### Decision Process
+
+            1. **Can Claude Max handle this?**
+               If yes, use Task tool with appropriate agent (no API cost)
+
+            2. **Is this high-volume writing?**
+               Consider deepseek for cost efficiency
+
+            3. **Does this require complex reasoning?**
+               Use opus for planning, architecture, nuanced analysis
+
+            4. **Is this routine code work?**
+               Sonnet is the default for most development tasks
+
+            5. **Is this simple text processing?**
+               Haiku is fast and cheap
+
+            ### Verification
+
+            Before using any model, verify it's current:
+            ```bash
+            python -c "import litellm; print([k for k in litellm.model_cost.keys() if 'claude' in k][:10])"
+            ```
+
+            ### Current Model IDs
+            - Claude Opus 4.5: `anthropic/claude-opus-4-5-20251101`
+            - Claude Sonnet 4: `anthropic/claude-sonnet-4-20250514`
+            - Claude Haiku: `anthropic/claude-haiku-3-5-20241022`
+            """
+
+        default:
+            // Generic but still useful template
+            return """
+            \(suggestion.description)
+
+            ## Purpose
+            This command extends Claude's capabilities by providing a structured workflow for \(name.replacingOccurrences(of: "-", with: " ")).
+
+            ## Instructions
+
+            When the user invokes /\(name), follow these steps:
+
+            1. **Gather Context**
+               - Identify relevant files, data, or state needed
+               - Ask clarifying questions if the scope is ambiguous
+
+            2. **Execute the Task**
+               - [Define the specific actions this command performs]
+               - Use appropriate tools (Read, Edit, Bash, etc.)
+               - Provide progress updates for longer operations
+
+            3. **Deliver Results**
+               - Present findings in a clear, structured format
+               - Include actionable next steps if applicable
+               - Offer to iterate or refine based on feedback
+
+            ## Example Usage
+            ```
+            User: /\(name)
+            Assistant: [Expected behavior description]
+            ```
+
+            ## Notes
+            - This command works best when [conditions]
+            - Consider combining with [related commands] for [enhanced workflow]
+            """
+        }
     }
 }
 
