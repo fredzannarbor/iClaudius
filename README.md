@@ -75,7 +75,7 @@ iClaudius runs entirely locally on your Mac. It:
 - Does NOT require an account
 - Only reads your local Claude Code configuration files
 
-See our [Privacy Policy](https://gist.github.com/yourusername/privacy-policy-iclaudius) for details.
+See our [Privacy Policy](https://gist.github.com/fredzannarbor/60750621db34745c8df4d3e971292b7d) for details.
 
 ## License
 

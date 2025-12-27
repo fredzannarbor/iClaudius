@@ -189,7 +189,9 @@ struct HealthAlertBar: View {
 
 struct SuggestionCard: View {
     let suggestion: CustomizationSuggestion
+    @ObservedObject var viewModel: ConfigViewModel
     let onDismiss: () -> Void
+    @State private var showingCreateSheet = false
 
     var categoryColor: Color {
         switch suggestion.category {
@@ -244,7 +246,13 @@ struct SuggestionCard: View {
 
                         Spacer()
 
-                        if let path = suggestion.actionPath {
+                        if suggestion.category == .command {
+                            Button("Create Command") {
+                                showingCreateSheet = true
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        } else if let path = suggestion.actionPath {
                             Button(suggestion.actionLabel) {
                                 NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
                             }
@@ -265,6 +273,98 @@ struct SuggestionCard: View {
                         .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
                 )
         )
+        .sheet(isPresented: $showingCreateSheet) {
+            CommandCreatorSheet(
+                suggestedName: extractCommandName(from: suggestion.title),
+                suggestedContent: generateCommandTemplate(for: suggestion),
+                viewModel: viewModel,
+                onCreated: onDismiss
+            )
+        }
+    }
+
+    func extractCommandName(from title: String) -> String {
+        // Extract command name from title like "Add /review-pr Command"
+        if let match = title.range(of: #"/[\w-]+"#, options: .regularExpression) {
+            return String(title[match]).dropFirst().lowercased()
+        }
+        return title.lowercased().replacingOccurrences(of: " ", with: "-")
+    }
+
+    func generateCommandTemplate(for suggestion: CustomizationSuggestion) -> String {
+        let name = extractCommandName(from: suggestion.title)
+        return """
+        \(suggestion.description)
+
+        ## Usage
+        /\(name)
+
+        ## Steps
+        1. [Describe what this command does]
+        2. [Add implementation details]
+        3. [Provide expected output]
+        """
+    }
+}
+
+struct CommandCreatorSheet: View {
+    @State var suggestedName: String
+    @State var suggestedContent: String
+    @ObservedObject var viewModel: ConfigViewModel
+    let onCreated: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State var isSkill = false
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Create New \(isSkill ? "Skill" : "Command")")
+                .font(.headline)
+
+            Toggle("Create as Skill (in ~/.claude/skills/)", isOn: $isSkill)
+                .padding(.horizontal)
+
+            GroupBox("Command Name") {
+                HStack {
+                    Text("/")
+                        .foregroundColor(.secondary)
+                    TextField("command-name", text: $suggestedName)
+                        .textFieldStyle(.roundedBorder)
+                        .fontDesign(.monospaced)
+                }
+                .padding()
+            }
+
+            GroupBox("Content (Markdown)") {
+                TextEditor(text: $suggestedContent)
+                    .font(.system(.body, design: .monospaced))
+                    .frame(minHeight: 200)
+                    .padding(4)
+            }
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.escape)
+
+                Spacer()
+
+                Button("Create") {
+                    Task {
+                        await viewModel.createCommand(
+                            name: suggestedName,
+                            content: suggestedContent,
+                            isSkill: isSkill
+                        )
+                        dismiss()
+                        onCreated()
+                    }
+                }
+                .keyboardShortcut(.return)
+                .buttonStyle(.borderedProminent)
+                .disabled(suggestedName.isEmpty || suggestedContent.isEmpty)
+            }
+        }
+        .padding()
+        .frame(width: 600, height: 500)
     }
 }
 
@@ -285,7 +385,7 @@ struct OverviewView: View {
 
                 // Suggestion Popup (dismissable)
                 if showSuggestion, let suggestion = viewModel.config.suggestion {
-                    SuggestionCard(suggestion: suggestion) {
+                    SuggestionCard(suggestion: suggestion, viewModel: viewModel) {
                         withAnimation {
                             showSuggestion = false
                         }
@@ -310,6 +410,63 @@ struct OverviewView: View {
                             Text("No CLAUDE.md files found")
                                 .foregroundColor(.secondary)
                                 .italic()
+                        }
+
+                        Divider()
+                            .padding(.vertical, 4)
+
+                        // Commands Hierarchy
+                        HStack {
+                            Image(systemName: "terminal")
+                                .foregroundColor(.green)
+                                .frame(width: 24)
+                            VStack(alignment: .leading) {
+                                Text("Commands")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Text("~/.claude/commands/")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Text("\(viewModel.config.commandCount) files")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            viewModel.selectedSection = .commands
+                        }
+
+                        // Skills Hierarchy
+                        HStack {
+                            Image(systemName: "wand.and.stars")
+                                .foregroundColor(.purple)
+                                .frame(width: 24)
+                            VStack(alignment: .leading) {
+                                Text("Skills")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Text("~/.claude/skills/")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Text("\(viewModel.config.skillCount) files")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            viewModel.selectedSection = .commands
                         }
                     }
                     .padding(.vertical, 4)
@@ -390,6 +547,14 @@ struct OverviewView: View {
                     ) {
                         viewModel.selectedSection = .cron
                     }
+                }
+
+                // Capability Analysis Section
+                if let analysis = viewModel.config.capabilityAnalysis, !analysis.categories.isEmpty {
+                    CapabilitySummaryView(analysis: analysis)
+                        .onTapGesture {
+                            viewModel.selectedSection = .commands
+                        }
                 }
 
                 Spacer()
@@ -1086,6 +1251,161 @@ struct PermissionsView: View {
                 Spacer()
             }
             .padding()
+        }
+    }
+}
+
+// MARK: - Capability Summary View
+
+struct CapabilitySummaryView: View {
+    let analysis: CapabilityAnalysis
+    @State private var isExpanded = false
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                // Header
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.yellow)
+                    Text("Capability Summary")
+                        .font(.headline)
+                    Spacer()
+                    Button(action: { withAnimation { isExpanded.toggle() } }) {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                // Summary text
+                Text(analysis.summaryText)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                // Bar chart visualization
+                CapabilityBarChart(categories: analysis.categories)
+                    .frame(height: 120)
+
+                // Expanded details
+                if isExpanded {
+                    Divider()
+
+                    ForEach(analysis.categories) { category in
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: category.icon)
+                                .foregroundColor(colorFor(category.color))
+                                .frame(width: 24)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(category.name)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    Text("\(category.count)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 8)
+                                        .background(colorFor(category.color).opacity(0.2))
+                                        .cornerRadius(4)
+                                }
+
+                                Text(category.description)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    func colorFor(_ colorName: String) -> Color {
+        switch colorName {
+        case "blue": return .blue
+        case "green": return .green
+        case "orange": return .orange
+        case "purple": return .purple
+        case "pink": return .pink
+        case "red": return .red
+        case "teal": return .teal
+        case "indigo": return .indigo
+        default: return .gray
+        }
+    }
+}
+
+struct CapabilityBarChart: View {
+    let categories: [CapabilityAnalysis.CapabilityCategory]
+
+    var maxCount: Int {
+        categories.map { $0.count }.max() ?? 1
+    }
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            ForEach(categories.prefix(6)) { category in
+                VStack(spacing: 4) {
+                    // Bar
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(colorFor(category.color).gradient)
+                        .frame(width: 36, height: barHeight(for: category.count))
+
+                    // Count label
+                    Text("\(category.count)")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+
+                    // Category icon
+                    Image(systemName: category.icon)
+                        .font(.caption)
+                        .foregroundColor(colorFor(category.color))
+                }
+                .help(category.name)
+            }
+
+            Spacer()
+
+            // Legend
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(categories.prefix(6)) { category in
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(colorFor(category.color))
+                            .frame(width: 8, height: 8)
+                        Text(category.name)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+        }
+    }
+
+    func barHeight(for count: Int) -> CGFloat {
+        let maxHeight: CGFloat = 80
+        let minHeight: CGFloat = 12
+        guard maxCount > 0 else { return minHeight }
+        return max(minHeight, CGFloat(count) / CGFloat(maxCount) * maxHeight)
+    }
+
+    func colorFor(_ colorName: String) -> Color {
+        switch colorName {
+        case "blue": return .blue
+        case "green": return .green
+        case "orange": return .orange
+        case "purple": return .purple
+        case "pink": return .pink
+        case "red": return .red
+        case "teal": return .teal
+        case "indigo": return .indigo
+        default: return .gray
         }
     }
 }

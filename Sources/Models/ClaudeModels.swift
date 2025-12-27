@@ -31,6 +31,79 @@ struct HealthIssue: Identifiable {
     let detail: String?
 }
 
+// MARK: - Capability Analysis
+
+struct CapabilityAnalysis {
+    let categories: [CapabilityCategory]
+    let summaryText: String
+    let totalExtensions: Int
+
+    struct CapabilityCategory: Identifiable {
+        let id = UUID()
+        let name: String
+        let icon: String
+        let color: String
+        let count: Int
+        let commands: [String]
+        let description: String
+    }
+}
+
+enum CapabilityCategoryType: String, CaseIterable {
+    case workflow = "Workflow Automation"
+    case codeQuality = "Code Quality"
+    case versionControl = "Version Control"
+    case documentation = "Documentation"
+    case testing = "Testing"
+    case deployment = "Deployment"
+    case projectMgmt = "Project Management"
+    case dataProcessing = "Data Processing"
+    case custom = "Custom/Other"
+
+    var icon: String {
+        switch self {
+        case .workflow: return "arrow.triangle.2.circlepath"
+        case .codeQuality: return "checkmark.seal"
+        case .versionControl: return "arrow.triangle.branch"
+        case .documentation: return "doc.text"
+        case .testing: return "testtube.2"
+        case .deployment: return "shippingbox"
+        case .projectMgmt: return "list.bullet.clipboard"
+        case .dataProcessing: return "cylinder.split.1x2"
+        case .custom: return "star"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .workflow: return "blue"
+        case .codeQuality: return "green"
+        case .versionControl: return "orange"
+        case .documentation: return "purple"
+        case .testing: return "pink"
+        case .deployment: return "red"
+        case .projectMgmt: return "teal"
+        case .dataProcessing: return "indigo"
+        case .custom: return "gray"
+        }
+    }
+
+    // Keywords to match commands to categories
+    var keywords: [String] {
+        switch self {
+        case .workflow: return ["workflow", "automate", "pipeline", "process", "task", "run", "execute", "batch", "queue", "schedule"]
+        case .codeQuality: return ["review", "lint", "format", "refactor", "clean", "quality", "style", "analyze", "check", "validate"]
+        case .versionControl: return ["commit", "push", "pull", "merge", "branch", "git", "pr", "release", "version", "tag", "changelog"]
+        case .documentation: return ["doc", "readme", "comment", "explain", "describe", "annotate", "markdown", "guide", "wiki"]
+        case .testing: return ["test", "spec", "assert", "mock", "coverage", "unit", "integration", "e2e", "verify"]
+        case .deployment: return ["deploy", "build", "publish", "ship", "release", "package", "bundle", "dist", "prod"]
+        case .projectMgmt: return ["todo", "task", "issue", "ticket", "plan", "sprint", "milestone", "track", "kanban", "budget"]
+        case .dataProcessing: return ["data", "transform", "parse", "convert", "import", "export", "migrate", "query", "fetch", "api"]
+        case .custom: return []
+        }
+    }
+}
+
 // MARK: - Customization Suggestion
 
 struct CustomizationSuggestion: Identifiable {
@@ -254,6 +327,7 @@ struct ClaudeConfiguration {
     var accountInfo: ClaudeAccountInfo?
     var healthIssues: [HealthIssue] = []
     var suggestion: CustomizationSuggestion?
+    var capabilityAnalysis: CapabilityAnalysis?
 
     var enabledPluginCount: Int {
         settings?.enabledPlugins?.filter { $0.value }.count ?? 0
@@ -261,6 +335,14 @@ struct ClaudeConfiguration {
 
     var totalCommandCount: Int {
         slashCommands.count
+    }
+
+    var commandCount: Int {
+        slashCommands.filter { $0.source == .user }.count
+    }
+
+    var skillCount: Int {
+        slashCommands.filter { $0.source == .skill }.count
     }
 
     var aliasCount: Int {

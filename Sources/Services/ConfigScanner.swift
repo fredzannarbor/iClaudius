@@ -35,7 +35,139 @@ actor ConfigScanner {
         // Generate a customization suggestion
         config.suggestion = generateSuggestion(config: config)
 
+        // Analyze capabilities
+        config.capabilityAnalysis = analyzeCapabilities(config: config)
+
         return config
+    }
+
+    // MARK: - Capability Analysis
+
+    func analyzeCapabilities(config: ClaudeConfiguration) -> CapabilityAnalysis {
+        var categoryCommands: [CapabilityCategoryType: [String]] = [:]
+
+        // Initialize all categories
+        for cat in CapabilityCategoryType.allCases {
+            categoryCommands[cat] = []
+        }
+
+        // Categorize each command/skill
+        for cmd in config.slashCommands {
+            let matchedCategory = categorizeCommand(cmd)
+            categoryCommands[matchedCategory, default: []].append(cmd.name)
+        }
+
+        // Build categories with counts > 0
+        var categories: [CapabilityAnalysis.CapabilityCategory] = []
+        for cat in CapabilityCategoryType.allCases {
+            let commands = categoryCommands[cat] ?? []
+            if !commands.isEmpty {
+                categories.append(CapabilityAnalysis.CapabilityCategory(
+                    name: cat.rawValue,
+                    icon: cat.icon,
+                    color: cat.color,
+                    count: commands.count,
+                    commands: commands,
+                    description: descriptionFor(category: cat, commands: commands)
+                ))
+            }
+        }
+
+        // Sort by count descending
+        categories.sort { $0.count > $1.count }
+
+        // Generate summary text
+        let summaryText = generateCapabilitySummary(config: config, categories: categories)
+
+        return CapabilityAnalysis(
+            categories: categories,
+            summaryText: summaryText,
+            totalExtensions: config.slashCommands.count
+        )
+    }
+
+    private func categorizeCommand(_ cmd: SlashCommand) -> CapabilityCategoryType {
+        let searchText = "\(cmd.name) \(cmd.content)".lowercased()
+
+        // Score each category by keyword matches
+        var bestMatch: CapabilityCategoryType = .custom
+        var bestScore = 0
+
+        for cat in CapabilityCategoryType.allCases where cat != .custom {
+            var score = 0
+            for keyword in cat.keywords {
+                if searchText.contains(keyword) {
+                    score += 1
+                }
+            }
+            if score > bestScore {
+                bestScore = score
+                bestMatch = cat
+            }
+        }
+
+        return bestScore > 0 ? bestMatch : .custom
+    }
+
+    private func descriptionFor(category: CapabilityCategoryType, commands: [String]) -> String {
+        let examples = commands.prefix(3).map { "/\($0)" }.joined(separator: ", ")
+
+        switch category {
+        case .workflow:
+            return "Automate repetitive tasks and processes (\(examples))"
+        case .codeQuality:
+            return "Enhance code review and quality checks (\(examples))"
+        case .versionControl:
+            return "Streamline git and PR workflows (\(examples))"
+        case .documentation:
+            return "Generate and maintain documentation (\(examples))"
+        case .testing:
+            return "Run and manage tests (\(examples))"
+        case .deployment:
+            return "Deploy and publish applications (\(examples))"
+        case .projectMgmt:
+            return "Track tasks and manage projects (\(examples))"
+        case .dataProcessing:
+            return "Transform and process data (\(examples))"
+        case .custom:
+            return "Custom extensions (\(examples))"
+        }
+    }
+
+    private func generateCapabilitySummary(config: ClaudeConfiguration, categories: [CapabilityAnalysis.CapabilityCategory]) -> String {
+        guard !categories.isEmpty else {
+            return "No custom commands configured. Claude is running with default capabilities."
+        }
+
+        let total = config.slashCommands.count
+        let skillCount = config.slashCommands.filter { $0.source == .skill }.count
+        let commandCount = total - skillCount
+
+        var summary = "Your Claude setup extends the default assistant with \(total) custom extensions"
+        if commandCount > 0 && skillCount > 0 {
+            summary += " (\(commandCount) commands, \(skillCount) skills)"
+        }
+        summary += ". "
+
+        // Highlight top capabilities
+        let topCategories = categories.prefix(3)
+        if topCategories.count == 1 {
+            summary += "Primary focus: \(topCategories[0].name.lowercased())."
+        } else {
+            let catNames = topCategories.map { $0.name.lowercased() }
+            if catNames.count == 2 {
+                summary += "Key capabilities: \(catNames[0]) and \(catNames[1])."
+            } else {
+                summary += "Key capabilities: \(catNames.dropLast().joined(separator: ", ")), and \(catNames.last!)."
+            }
+        }
+
+        // Add automation note if cron jobs exist
+        if !config.cronJobs.isEmpty {
+            summary += " \(config.cronJobs.count) scheduled task\(config.cronJobs.count == 1 ? "" : "s") provide automated execution."
+        }
+
+        return summary
     }
 
     // MARK: - Suggestion Generator

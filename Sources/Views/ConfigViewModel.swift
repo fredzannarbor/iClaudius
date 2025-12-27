@@ -57,4 +57,27 @@ class ConfigViewModel: ObservableObject {
         error = nil
         successMessage = nil
     }
+
+    // MARK: - Command/Skill Creation
+
+    func createCommand(name: String, content: String, isSkill: Bool = false) async {
+        let directory = isSkill
+            ? "\(NSHomeDirectory())/.claude/skills"
+            : "\(NSHomeDirectory())/.claude/commands"
+
+        let path = "\(directory)/\(name).md"
+
+        do {
+            // Ensure directory exists
+            try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+
+            // Write the file
+            try content.write(toFile: path, atomically: true, encoding: .utf8)
+
+            successMessage = "\(isSkill ? "Skill" : "Command") /\(name) created successfully"
+            await refresh()
+        } catch {
+            self.error = "Failed to create \(isSkill ? "skill" : "command"): \(error.localizedDescription)"
+        }
+    }
 }
