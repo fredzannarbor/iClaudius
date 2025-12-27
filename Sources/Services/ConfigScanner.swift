@@ -357,7 +357,10 @@ actor ConfigScanner {
             issues.append(HealthIssue(
                 severity: .warning,
                 message: "No global CLAUDE.md found",
-                detail: "Consider creating ~/.claude/CLAUDE.md for global instructions"
+                detail: "Consider creating ~/.claude/CLAUDE.md for global instructions",
+                explanation: "A global CLAUDE.md file provides persistent instructions that Claude follows in every conversation. Without one, you may need to repeat instructions frequently.",
+                suggestedAction: "Create ~/.claude/CLAUDE.md with your preferred coding conventions, communication style, and project patterns.",
+                navigationTarget: "claudeMD"
             ))
         }
 
@@ -366,7 +369,10 @@ actor ConfigScanner {
             issues.append(HealthIssue(
                 severity: .warning,
                 message: "Plugins installed but none enabled",
-                detail: "Enable plugins in settings.json to use them"
+                detail: "Enable plugins in settings.json to use them",
+                explanation: "You have \(config.plugins.count) plugin(s) installed but none are active. Plugins extend Claude's capabilities with specialized features.",
+                suggestedAction: "Edit ~/.claude/settings.json and set enabledPlugins values to true for plugins you want to use.",
+                navigationTarget: "plugins"
             ))
         }
 
@@ -374,10 +380,14 @@ actor ConfigScanner {
         let staleThreshold = Date().addingTimeInterval(-90 * 24 * 60 * 60)
         for file in config.claudeMDFiles {
             if let modDate = file.lastModified, modDate < staleThreshold {
+                let daysSince = Calendar.current.dateComponents([.day], from: modDate, to: Date()).day ?? 0
                 issues.append(HealthIssue(
                     severity: .warning,
                     message: "Stale CLAUDE.md: \(file.level.rawValue)",
-                    detail: "Not modified since \(modDate.formatted(date: .abbreviated, time: .omitted))"
+                    detail: "Not modified in \(daysSince) days (since \(modDate.formatted(date: .abbreviated, time: .omitted)))",
+                    explanation: "Instructions may become outdated as your workflow, tools, and preferences evolve. Regular review ensures Claude's behavior stays aligned with your current needs.",
+                    suggestedAction: "Review and update this file to reflect your current coding standards, project conventions, and preferred tools.",
+                    navigationTarget: "claudeMD"
                 ))
             }
         }
@@ -387,7 +397,10 @@ actor ConfigScanner {
             issues.append(HealthIssue(
                 severity: .warning,
                 message: "Large permissions allowlist (\(allow.count) entries)",
-                detail: "Consider reviewing and consolidating allowed commands"
+                detail: "Consider reviewing and consolidating allowed commands",
+                explanation: "A large allowlist can be difficult to audit and may grant more permissions than intended. Some entries may be obsolete or redundant.",
+                suggestedAction: "Review ~/.claude/settings.local.json and consolidate similar permissions using wildcards where safe. Remove unused entries.",
+                navigationTarget: "permissions"
             ))
         }
 
@@ -396,7 +409,10 @@ actor ConfigScanner {
             issues.append(HealthIssue(
                 severity: .warning,
                 message: "No custom slash commands",
-                detail: "Create .md files in ~/.claude/commands/ to add custom commands"
+                detail: "Create .md files in ~/.claude/commands/ to add custom commands",
+                explanation: "Custom slash commands let you create reusable workflows and instructions. They're a powerful way to standardize common tasks.",
+                suggestedAction: "Create your first command: echo 'Your instruction here' > ~/.claude/commands/my-command.md",
+                navigationTarget: "commands"
             ))
         }
 

@@ -29,6 +29,18 @@ struct HealthIssue: Identifiable {
     let severity: ConfigHealth
     let message: String
     let detail: String?
+    let explanation: String?
+    let suggestedAction: String?
+    let navigationTarget: String? // NavSection name to navigate to
+
+    init(severity: ConfigHealth, message: String, detail: String? = nil, explanation: String? = nil, suggestedAction: String? = nil, navigationTarget: String? = nil) {
+        self.severity = severity
+        self.message = message
+        self.detail = detail
+        self.explanation = explanation
+        self.suggestedAction = suggestedAction
+        self.navigationTarget = navigationTarget
+    }
 }
 
 // MARK: - Capability Analysis

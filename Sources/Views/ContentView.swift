@@ -187,7 +187,9 @@ struct DetailView: View {
 struct HealthAlertBar: View {
     let health: ConfigHealth
     let issues: [HealthIssue]
+    @ObservedObject var viewModel: ConfigViewModel
     @State private var isExpanded = false
+    @State private var expandedIssueId: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -217,23 +219,110 @@ struct HealthAlertBar: View {
             .buttonStyle(.plain)
 
             if isExpanded && !issues.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     ForEach(issues) { issue in
-                        HStack(alignment: .top) {
-                            Image(systemName: issue.severity.icon)
-                                .foregroundColor(colorFor(issue.severity))
-                                .frame(width: 20)
+                        VStack(alignment: .leading, spacing: 8) {
+                            // Issue header - clickable to expand
+                            Button(action: {
+                                withAnimation {
+                                    if expandedIssueId == issue.id {
+                                        expandedIssueId = nil
+                                    } else {
+                                        expandedIssueId = issue.id
+                                    }
+                                }
+                            }) {
+                                HStack(alignment: .top) {
+                                    Image(systemName: issue.severity.icon)
+                                        .foregroundColor(colorFor(issue.severity))
+                                        .frame(width: 20)
 
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(issue.message)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                if let detail = issue.detail {
-                                    Text(detail)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(issue.message)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                        if let detail = issue.detail {
+                                            Text(detail)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: expandedIssueId == issue.id ? "chevron.down" : "chevron.right")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                             }
+                            .buttonStyle(.plain)
+
+                            // Expanded issue details
+                            if expandedIssueId == issue.id {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    // Explanation
+                                    if let explanation = issue.explanation {
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Image(systemName: "info.circle")
+                                                .foregroundColor(.blue)
+                                                .frame(width: 16)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("Why this matters")
+                                                    .font(.caption)
+                                                    .fontWeight(.semibold)
+                                                    .foregroundColor(.blue)
+                                                Text(explanation)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                    }
+
+                                    // Suggested action
+                                    if let action = issue.suggestedAction {
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Image(systemName: "lightbulb")
+                                                .foregroundColor(.yellow)
+                                                .frame(width: 16)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("Suggested action")
+                                                    .font(.caption)
+                                                    .fontWeight(.semibold)
+                                                    .foregroundColor(.yellow)
+                                                Text(action)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                    }
+
+                                    // Navigation button
+                                    if let target = issue.navigationTarget {
+                                        Button(action: {
+                                            navigateTo(target: target)
+                                        }) {
+                                            HStack {
+                                                Image(systemName: "arrow.right.circle.fill")
+                                                Text("Go to \(sectionName(for: target))")
+                                                    .font(.caption)
+                                                    .fontWeight(.medium)
+                                            }
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color.accentColor.opacity(0.15))
+                                            .cornerRadius(6)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.leading, 28)
+                                .padding(.top, 4)
+                            }
+                        }
+                        .padding(.vertical, 4)
+
+                        if issue.id != issues.last?.id {
+                            Divider()
                         }
                     }
                 }
@@ -257,6 +346,32 @@ struct HealthAlertBar: View {
         case .healthy: return .green
         case .warning: return .orange
         case .critical: return .red
+        }
+    }
+
+    func navigateTo(target: String) {
+        switch target {
+        case "claudeMD": viewModel.selectedSection = .claudeMD
+        case "commands": viewModel.selectedSection = .commands
+        case "plugins": viewModel.selectedSection = .plugins
+        case "permissions": viewModel.selectedSection = .permissions
+        case "cron": viewModel.selectedSection = .cron
+        case "safety": viewModel.selectedSection = .safety
+        case "dependencies": viewModel.selectedSection = .dependencies
+        default: break
+        }
+    }
+
+    func sectionName(for target: String) -> String {
+        switch target {
+        case "claudeMD": return "CLAUDE.md Files"
+        case "commands": return "Commands"
+        case "plugins": return "Plugins"
+        case "permissions": return "Permissions"
+        case "cron": return "Scheduled Jobs"
+        case "safety": return "Safety Dashboard"
+        case "dependencies": return "Dependencies"
+        default: return target
         }
     }
 }
@@ -758,7 +873,8 @@ struct OverviewView: View {
                 // Health Alert Bar at top
                 HealthAlertBar(
                     health: viewModel.config.overallHealth,
-                    issues: viewModel.config.healthIssues
+                    issues: viewModel.config.healthIssues,
+                    viewModel: viewModel
                 )
 
                 // Capability Analysis Section - NOW AT TOP
