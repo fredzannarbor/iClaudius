@@ -1,0 +1,25 @@
+# Build artifacts
+.build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Xcode
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+
+# Swift Package Manager
+Package.resolved
+.swiftpm/
+
+# App bundle (built)
+*.app/
+
+# Generated files
+*.iconset/
