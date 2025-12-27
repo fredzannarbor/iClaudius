@@ -50,6 +50,10 @@ struct CapabilityAnalysis {
 }
 
 enum CapabilityCategoryType: String, CaseIterable {
+    case publishing = "Publishing & Books"
+    case content = "Content Creation"
+    case health = "Health & Wellness"
+    case finance = "Finance & Budget"
     case workflow = "Workflow Automation"
     case codeQuality = "Code Quality"
     case versionControl = "Version Control"
@@ -58,10 +62,16 @@ enum CapabilityCategoryType: String, CaseIterable {
     case deployment = "Deployment"
     case projectMgmt = "Project Management"
     case dataProcessing = "Data Processing"
+    case research = "Research & Analysis"
+    case social = "Social & Community"
     case custom = "Custom/Other"
 
     var icon: String {
         switch self {
+        case .publishing: return "book.closed"
+        case .content: return "pencil.and.outline"
+        case .health: return "heart.text.square"
+        case .finance: return "dollarsign.circle"
         case .workflow: return "arrow.triangle.2.circlepath"
         case .codeQuality: return "checkmark.seal"
         case .versionControl: return "arrow.triangle.branch"
@@ -70,20 +80,28 @@ enum CapabilityCategoryType: String, CaseIterable {
         case .deployment: return "shippingbox"
         case .projectMgmt: return "list.bullet.clipboard"
         case .dataProcessing: return "cylinder.split.1x2"
+        case .research: return "magnifyingglass.circle"
+        case .social: return "bubble.left.and.bubble.right"
         case .custom: return "star"
         }
     }
 
     var color: String {
         switch self {
+        case .publishing: return "brown"
+        case .content: return "cyan"
+        case .health: return "pink"
+        case .finance: return "green"
         case .workflow: return "blue"
-        case .codeQuality: return "green"
+        case .codeQuality: return "mint"
         case .versionControl: return "orange"
         case .documentation: return "purple"
         case .testing: return "pink"
         case .deployment: return "red"
         case .projectMgmt: return "teal"
         case .dataProcessing: return "indigo"
+        case .research: return "yellow"
+        case .social: return "cyan"
         case .custom: return "gray"
         }
     }
@@ -91,14 +109,20 @@ enum CapabilityCategoryType: String, CaseIterable {
     // Keywords to match commands to categories
     var keywords: [String] {
         switch self {
-        case .workflow: return ["workflow", "automate", "pipeline", "process", "task", "run", "execute", "batch", "queue", "schedule"]
+        case .publishing: return ["book", "isbn", "imprint", "publish", "codex", "manuscript", "chapter", "cover", "lsi", "ingram", "amazon", "kdp", "print", "epub", "pdf", "latex", "nimble", "warship", "navy", "graybook"]
+        case .content: return ["write", "draft", "edit", "outline", "blog", "post", "article", "story", "narrative", "creative", "multiverse"]
+        case .health: return ["health", "fitness", "weight", "blood", "pressure", "exercise", "sleep", "wellness", "medical", "track-health", "strava"]
+        case .finance: return ["budget", "money", "expense", "income", "financial", "cost", "price", "payment", "invoice", "forecast", "survival"]
+        case .workflow: return ["workflow", "automate", "pipeline", "process", "run", "execute", "batch", "queue", "schedule", "xynapse", "agent"]
         case .codeQuality: return ["review", "lint", "format", "refactor", "clean", "quality", "style", "analyze", "check", "validate"]
         case .versionControl: return ["commit", "push", "pull", "merge", "branch", "git", "pr", "release", "version", "tag", "changelog"]
         case .documentation: return ["doc", "readme", "comment", "explain", "describe", "annotate", "markdown", "guide", "wiki"]
-        case .testing: return ["test", "spec", "assert", "mock", "coverage", "unit", "integration", "e2e", "verify"]
-        case .deployment: return ["deploy", "build", "publish", "ship", "release", "package", "bundle", "dist", "prod"]
-        case .projectMgmt: return ["todo", "task", "issue", "ticket", "plan", "sprint", "milestone", "track", "kanban", "budget"]
-        case .dataProcessing: return ["data", "transform", "parse", "convert", "import", "export", "migrate", "query", "fetch", "api"]
+        case .testing: return ["test", "spec", "assert", "mock", "coverage", "unit", "integration", "e2e", "verify", "ux-test"]
+        case .deployment: return ["deploy", "build", "ship", "package", "bundle", "dist", "prod", "remote", "server", "gcp"]
+        case .projectMgmt: return ["todo", "task", "issue", "ticket", "plan", "sprint", "milestone", "track", "kanban", "followthrough"]
+        case .dataProcessing: return ["data", "transform", "parse", "convert", "import", "export", "migrate", "query", "fetch", "api", "crawl"]
+        case .research: return ["search", "find", "lookup", "research", "keywords", "lsi", "analyze", "explore", "investigate"]
+        case .social: return ["social", "feed", "persona", "community", "share", "post", "network", "agentic"]
         case .custom: return []
         }
     }

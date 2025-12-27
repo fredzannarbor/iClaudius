@@ -113,6 +113,14 @@ actor ConfigScanner {
         let examples = commands.prefix(3).map { "/\($0)" }.joined(separator: ", ")
 
         switch category {
+        case .publishing:
+            return "Book publishing and production workflows (\(examples))"
+        case .content:
+            return "Content creation and writing tools (\(examples))"
+        case .health:
+            return "Health and fitness tracking (\(examples))"
+        case .finance:
+            return "Financial management and budgeting (\(examples))"
         case .workflow:
             return "Automate repetitive tasks and processes (\(examples))"
         case .codeQuality:
@@ -129,6 +137,10 @@ actor ConfigScanner {
             return "Track tasks and manage projects (\(examples))"
         case .dataProcessing:
             return "Transform and process data (\(examples))"
+        case .research:
+            return "Research and analysis tools (\(examples))"
+        case .social:
+            return "Social and community features (\(examples))"
         case .custom:
             return "Custom extensions (\(examples))"
         }

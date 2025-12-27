@@ -1647,6 +1647,10 @@ struct CapabilitySummaryView: View {
         case "red": return .red
         case "teal": return .teal
         case "indigo": return .indigo
+        case "brown": return .brown
+        case "cyan": return .cyan
+        case "mint": return .mint
+        case "yellow": return .yellow
         default: return .gray
         }
     }
@@ -1717,6 +1721,10 @@ struct CapabilityBarChart: View {
         case "red": return .red
         case "teal": return .teal
         case "indigo": return .indigo
+        case "brown": return .brown
+        case "cyan": return .cyan
+        case "mint": return .mint
+        case "yellow": return .yellow
         default: return .gray
         }
     }
@@ -1736,6 +1744,11 @@ struct MindMapSheet: View {
                 Text("Command Mind Map")
                     .font(.title2)
                     .fontWeight(.bold)
+
+                Text("\(commands.count) commands in \(analysis.categories.count) categories")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
                 Spacer()
                 Button("Done") { dismiss() }
                     .keyboardShortcut(.escape)
@@ -1751,7 +1764,8 @@ struct MindMapSheet: View {
             }
             .background(Color(NSColor.textBackgroundColor))
         }
-        .frame(width: 900, height: 700)
+        .frame(minWidth: 600, idealWidth: 900, maxWidth: .infinity,
+               minHeight: 400, idealHeight: 700, maxHeight: .infinity)
     }
 }
 
@@ -1865,6 +1879,10 @@ struct MindMapCanvas: View {
         case "red": return .red
         case "teal": return .teal
         case "indigo": return .indigo
+        case "brown": return .brown
+        case "cyan": return .cyan
+        case "mint": return .mint
+        case "yellow": return .yellow
         default: return .gray
         }
     }
