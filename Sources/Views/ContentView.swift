@@ -246,19 +246,16 @@ struct SuggestionCard: View {
 
                         Spacer()
 
-                        if suggestion.category == .command {
-                            Button("Create Command") {
+                        // Always show Create Command for command suggestions
+                        Button(suggestion.category == .command ? "Create Command" : suggestion.actionLabel) {
+                            if suggestion.category == .command {
                                 showingCreateSheet = true
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
-                        } else if let path = suggestion.actionPath {
-                            Button(suggestion.actionLabel) {
+                            } else if let path = suggestion.actionPath {
                                 NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
                             }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
                         }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
                     }
                     .padding(.top, 4)
                 }
