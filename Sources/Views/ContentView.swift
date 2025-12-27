@@ -143,39 +143,19 @@ struct DetailView: View {
             case .controlPlane:
                 ControlPlaneOverview(cpConfig: viewModel.cpConfig, viewModel: viewModel)
             case .safety:
-                if let dashboard = viewModel.cpConfig.safetyDashboard {
-                    SafetyDashboardView(dashboard: dashboard)
-                } else {
-                    Text("Safety dashboard not available")
-                        .foregroundColor(.secondary)
-                }
+                SafetyDashboardView(dashboard: viewModel.cpConfig.safetyDashboard, viewModel: viewModel)
             case .interactions:
-                if let graph = viewModel.cpConfig.interactionGraph {
-                    InteractionGraphView(graph: graph)
-                } else {
-                    Text("Interaction graph not available")
-                        .foregroundColor(.secondary)
-                }
+                InteractionGraphView(graph: viewModel.cpConfig.interactionGraph, viewModel: viewModel)
             case .dependencies:
-                DependencyView(dependencies: viewModel.cpConfig.dependencies, conflicts: viewModel.cpConfig.conflicts)
+                DependencyView(dependencies: viewModel.cpConfig.dependencies, conflicts: viewModel.cpConfig.conflicts, viewModel: viewModel)
             case .archaeology:
-                PromptArchaeologyView(versions: viewModel.cpConfig.promptVersions)
+                PromptArchaeologyView(versions: viewModel.cpConfig.promptVersions, viewModel: viewModel)
             case .coverage:
-                if let coverage = viewModel.cpConfig.capabilityCoverage {
-                    CapabilityCoverageView(coverage: coverage)
-                } else {
-                    Text("Capability coverage not available")
-                        .foregroundColor(.secondary)
-                }
+                CapabilityCoverageView(coverage: viewModel.cpConfig.capabilityCoverage, viewModel: viewModel)
             case .runtime:
-                if let state = viewModel.cpConfig.runtimeState {
-                    RuntimeStateView(state: state)
-                } else {
-                    Text("Runtime state not available")
-                        .foregroundColor(.secondary)
-                }
+                RuntimeStateView(state: viewModel.cpConfig.runtimeState, viewModel: viewModel)
             case .traces:
-                ExecutionTracesView(traces: viewModel.cpConfig.executionTraces, sessions: viewModel.cpConfig.sessions)
+                ExecutionTracesView(traces: viewModel.cpConfig.executionTraces, sessions: viewModel.cpConfig.sessions, viewModel: viewModel)
             }
         }
         .frame(minWidth: 500)

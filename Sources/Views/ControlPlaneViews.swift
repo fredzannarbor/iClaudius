@@ -1,5 +1,33 @@
 import SwiftUI
 
+// MARK: - Empty State View
+
+struct EmptyStateView: View {
+    let icon: String
+    let title: String
+    let message: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 48))
+                .foregroundColor(color.opacity(0.6))
+
+            Text(title)
+                .font(.headline)
+
+            Text(message)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 400)
+        }
+        .frame(maxWidth: .infinity, minHeight: 200)
+        .padding()
+    }
+}
+
 // MARK: - Control Plane Overview
 
 struct ControlPlaneOverview: View {
@@ -233,7 +261,8 @@ struct QuickStatPill: View {
 // MARK: - Safety Dashboard View
 
 struct SafetyDashboardView: View {
-    let dashboard: SafetyDashboard
+    let dashboard: SafetyDashboard?
+    @ObservedObject var viewModel: ConfigViewModel
 
     var body: some View {
         ScrollView {
@@ -245,129 +274,150 @@ struct SafetyDashboardView: View {
                             .font(.largeTitle)
                             .fontWeight(.bold)
 
-                        HStack {
-                            Image(systemName: dashboard.overallStatus.icon)
-                                .foregroundColor(colorFor(dashboard.overallStatus.color))
-                            Text(dashboard.overallStatus.rawValue)
+                        if let dashboard = dashboard {
+                            HStack {
+                                Image(systemName: dashboard.overallStatus.icon)
+                                    .foregroundColor(colorFor(dashboard.overallStatus.color))
+                                Text(dashboard.overallStatus.rawValue)
+                                    .font(.headline)
+                            }
+                        } else {
+                            Text("Analyzing configuration...")
                                 .font(.headline)
+                                .foregroundColor(.secondary)
                         }
                     }
 
                     Spacer()
 
                     // Safety Score Gauge
-                    SafetyScoreGauge(score: dashboard.safetyScore)
+                    SafetyScoreGauge(score: dashboard?.safetyScore ?? 0)
                 }
 
-                // Permission Surface Summary
-                GroupBox("Permission Surface") {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Image(systemName: dashboard.permissionSurface.riskLevel.icon)
-                                .foregroundColor(colorFor(dashboard.permissionSurface.riskLevel.color))
-                            Text(dashboard.permissionSurface.riskLevel.rawValue)
-                                .fontWeight(.medium)
-                            Spacer()
-                            Text("\(dashboard.permissionSurface.totalPermissions) permissions")
-                                .foregroundColor(.secondary)
-                        }
-
-                        Divider()
-
-                        Text("Sensitive Operations (\(dashboard.permissionSurface.sensitiveOperations.count))")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-
-                        ForEach(dashboard.permissionSurface.sensitiveOperations.prefix(5)) { op in
+                if let dashboard = dashboard {
+                    // Permission Surface Summary
+                    GroupBox("Permission Surface") {
+                        VStack(alignment: .leading, spacing: 12) {
                             HStack {
-                                Circle()
-                                    .fill(colorFor(op.risk.color))
-                                    .frame(width: 8, height: 8)
-                                Text(op.operation)
-                                    .font(.system(.caption, design: .monospaced))
+                                Image(systemName: dashboard.permissionSurface.riskLevel.icon)
+                                    .foregroundColor(colorFor(dashboard.permissionSurface.riskLevel.color))
+                                Text(dashboard.permissionSurface.riskLevel.rawValue)
+                                    .fontWeight(.medium)
                                 Spacer()
-                                Text(op.risk.rawValue)
+                                Text("\(dashboard.permissionSurface.totalPermissions) permissions")
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Divider()
+
+                            Text("Sensitive Operations (\(dashboard.permissionSurface.sensitiveOperations.count))")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+
+                            if dashboard.permissionSurface.sensitiveOperations.isEmpty {
+                                Text("No sensitive operations detected")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-
-                        if dashboard.permissionSurface.sensitiveOperations.count > 5 {
-                            Text("+ \(dashboard.permissionSurface.sensitiveOperations.count - 5) more")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding()
-                }
-
-                // Autonomous Loops
-                GroupBox("Autonomous Loops") {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if dashboard.autonomousLoops.isEmpty {
-                            HStack {
-                                Image(systemName: "checkmark.circle")
                                     .foregroundColor(.green)
-                                Text("No autonomous loops detected")
-                                    .foregroundColor(.secondary)
-                            }
-                        } else {
-                            ForEach(dashboard.autonomousLoops) { loop in
-                                HStack {
-                                    Image(systemName: loop.type.icon)
-                                        .foregroundColor(colorFor(loop.type.riskLevel))
-                                        .frame(width: 24)
-
-                                    VStack(alignment: .leading) {
-                                        Text(loop.name)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        Text("\(loop.type.rawValue) - \(loop.frequency)")
+                            } else {
+                                ForEach(dashboard.permissionSurface.sensitiveOperations.prefix(5)) { op in
+                                    HStack {
+                                        Circle()
+                                            .fill(colorFor(op.risk.color))
+                                            .frame(width: 8, height: 8)
+                                        Text(op.operation)
+                                            .font(.system(.caption, design: .monospaced))
+                                        Spacer()
+                                        Text(op.risk.rawValue)
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
+                                }
 
-                                    Spacer()
-
-                                    if loop.isActive {
-                                        Text("Active")
-                                            .font(.caption)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 2)
-                                            .background(Color.green.opacity(0.2))
-                                            .cornerRadius(4)
-                                    }
+                                if dashboard.permissionSurface.sensitiveOperations.count > 5 {
+                                    Text("+ \(dashboard.permissionSurface.sensitiveOperations.count - 5) more")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
                                 }
                             }
                         }
+                        .padding()
                     }
-                    .padding()
-                }
 
-                // Recommendations
-                if !dashboard.permissionSurface.recommendations.isEmpty {
-                    GroupBox("Recommendations") {
+                    // Autonomous Loops
+                    GroupBox("Autonomous Loops") {
                         VStack(alignment: .leading, spacing: 12) {
-                            ForEach(dashboard.permissionSurface.recommendations) { rec in
-                                HStack(alignment: .top) {
-                                    Circle()
-                                        .fill(colorFor(rec.priority.color))
-                                        .frame(width: 10, height: 10)
-                                        .padding(.top, 4)
+                            if dashboard.autonomousLoops.isEmpty {
+                                HStack {
+                                    Image(systemName: "checkmark.circle")
+                                        .foregroundColor(.green)
+                                    Text("No autonomous loops detected")
+                                        .foregroundColor(.secondary)
+                                }
+                            } else {
+                                ForEach(dashboard.autonomousLoops) { loop in
+                                    HStack {
+                                        Image(systemName: loop.type.icon)
+                                            .foregroundColor(colorFor(loop.type.riskLevel))
+                                            .frame(width: 24)
 
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(rec.title)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        Text(rec.description)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                                        VStack(alignment: .leading) {
+                                            Text(loop.name)
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                            Text("\(loop.type.rawValue) - \(loop.frequency)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+
+                                        Spacer()
+
+                                        if loop.isActive {
+                                            Text("Active")
+                                                .font(.caption)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 2)
+                                                .background(Color.green.opacity(0.2))
+                                                .cornerRadius(4)
+                                        }
                                     }
                                 }
                             }
                         }
                         .padding()
                     }
+
+                    // Recommendations
+                    if !dashboard.permissionSurface.recommendations.isEmpty {
+                        GroupBox("Recommendations") {
+                            VStack(alignment: .leading, spacing: 12) {
+                                ForEach(dashboard.permissionSurface.recommendations) { rec in
+                                    HStack(alignment: .top) {
+                                        Circle()
+                                            .fill(colorFor(rec.priority.color))
+                                            .frame(width: 10, height: 10)
+                                            .padding(.top, 4)
+
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(rec.title)
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                            Text(rec.description)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding()
+                        }
+                    }
+                } else {
+                    EmptyStateView(
+                        icon: "shield.checkered",
+                        title: "Safety Analysis Pending",
+                        message: "The safety dashboard analyzes your Claude configuration for potential security concerns, permission surfaces, and autonomous behaviors.",
+                        color: .blue
+                    )
                 }
 
                 Spacer()
@@ -427,7 +477,8 @@ struct SafetyScoreGauge: View {
 // MARK: - Interaction Graph View
 
 struct InteractionGraphView: View {
-    let graph: InteractionGraph
+    let graph: InteractionGraph?
+    @ObservedObject var viewModel: ConfigViewModel
     @State private var selectedLayer: ControlPlaneLayer?
 
     var body: some View {
@@ -438,35 +489,58 @@ struct InteractionGraphView: View {
                     .font(.title2)
                     .fontWeight(.bold)
 
-                Text("\(graph.nodes.count) nodes, \(graph.edges.count) edges")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                if let graph = graph {
+                    Text("\(graph.nodes.count) nodes, \(graph.edges.count) edges")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
 
                 Spacer()
 
                 // Layer filter
-                Picker("Layer", selection: $selectedLayer) {
-                    Text("All").tag(nil as ControlPlaneLayer?)
-                    ForEach(ControlPlaneLayer.allCases, id: \.self) { layer in
-                        Text(layer.rawValue).tag(layer as ControlPlaneLayer?)
+                if graph != nil {
+                    Picker("Layer", selection: $selectedLayer) {
+                        Text("All").tag(nil as ControlPlaneLayer?)
+                        ForEach(ControlPlaneLayer.allCases, id: \.self) { layer in
+                            Text(layer.rawValue).tag(layer as ControlPlaneLayer?)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .frame(width: 400)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 400)
             }
             .padding()
 
-            // Graph visualization
-            ScrollView([.horizontal, .vertical]) {
-                GraphCanvas(graph: filteredGraph)
-                    .frame(minWidth: 800, minHeight: 600)
-                    .padding(40)
+            if let graph = graph {
+                if graph.nodes.isEmpty {
+                    EmptyStateView(
+                        icon: "point.3.connected.trianglepath.dotted",
+                        title: "No Interactions Found",
+                        message: "The interaction graph shows relationships between commands, plugins, CLAUDE.md files, and other control entities. Add more configuration to see connections.",
+                        color: .purple
+                    )
+                } else {
+                    // Graph visualization
+                    ScrollView([.horizontal, .vertical]) {
+                        GraphCanvas(graph: filteredGraph)
+                            .frame(minWidth: 800, minHeight: 600)
+                            .padding(40)
+                    }
+                    .background(Color(NSColor.textBackgroundColor))
+                }
+            } else {
+                EmptyStateView(
+                    icon: "point.3.connected.trianglepath.dotted",
+                    title: "Building Interaction Graph",
+                    message: "The interaction graph visualizes how your commands, plugins, and configuration files relate to each other.",
+                    color: .purple
+                )
             }
-            .background(Color(NSColor.textBackgroundColor))
         }
     }
 
     var filteredGraph: InteractionGraph {
+        guard let graph = graph else { return InteractionGraph(nodes: [], edges: []) }
         guard let layer = selectedLayer else { return graph }
 
         let filteredNodes = graph.nodes.filter { $0.layer == layer }
@@ -574,6 +648,7 @@ struct GraphNode: View {
 struct DependencyView: View {
     let dependencies: [Dependency]
     let conflicts: [Conflict]
+    @ObservedObject var viewModel: ConfigViewModel
 
     var body: some View {
         ScrollView {
@@ -624,44 +699,64 @@ struct DependencyView: View {
                         }
                         .padding()
                     }
+                } else {
+                    GroupBox {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("No Conflicts Detected")
+                                .font(.headline)
+                            Spacer()
+                        }
+                        .padding()
+                    }
                 }
 
                 // Dependencies list
-                GroupBox("Dependencies (\(dependencies.count))") {
-                    LazyVStack(alignment: .leading, spacing: 8) {
-                        ForEach(dependencies) { dep in
-                            HStack {
-                                Text(dep.source)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.blue.opacity(0.1))
-                                    .cornerRadius(4)
+                if dependencies.isEmpty {
+                    EmptyStateView(
+                        icon: "arrow.triangle.branch",
+                        title: "No Dependencies Found",
+                        message: "Dependencies are detected when commands reference other commands, or cron jobs invoke commands. As you build more interconnected automation, dependencies will appear here.",
+                        color: .blue
+                    )
+                } else {
+                    GroupBox("Dependencies (\(dependencies.count))") {
+                        LazyVStack(alignment: .leading, spacing: 8) {
+                            ForEach(dependencies) { dep in
+                                HStack {
+                                    Text(dep.source)
+                                        .font(.system(.caption, design: .monospaced))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.1))
+                                        .cornerRadius(4)
 
-                                Image(systemName: arrowFor(dep.type))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    Image(systemName: arrowFor(dep.type))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
 
-                                Text(dep.target)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.green.opacity(0.1))
-                                    .cornerRadius(4)
+                                    Text(dep.target)
+                                        .font(.system(.caption, design: .monospaced))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.1))
+                                        .cornerRadius(4)
 
-                                Spacer()
+                                    Spacer()
 
-                                Text(dep.type.rawValue)
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    Text(dep.type.rawValue)
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
 
-                                Circle()
-                                    .fill(strengthColor(dep.strength))
-                                    .frame(width: 8, height: 8)
+                                    Circle()
+                                        .fill(strengthColor(dep.strength))
+                                        .frame(width: 8, height: 8)
+                                }
                             }
                         }
+                        .padding()
                     }
-                    .padding()
                 }
 
                 Spacer()
@@ -702,54 +797,53 @@ struct DependencyView: View {
 
 struct PromptArchaeologyView: View {
     let versions: [PromptVersion]
+    @ObservedObject var viewModel: ConfigViewModel
     @State private var selectedVersion: PromptVersion?
 
     var body: some View {
-        HSplitView {
-            // Version list
-            List(versions, selection: $selectedVersion) { version in
-                VStack(alignment: .leading, spacing: 4) {
+        if versions.isEmpty {
+            VStack(spacing: 20) {
+                Text("Prompt History")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                EmptyStateView(
+                    icon: "clock.arrow.circlepath",
+                    title: "No Version History Available",
+                    message: "Prompt history tracks changes to your CLAUDE.md files over time. Version history is extracted from git commits when available.",
+                    color: .purple
+                )
+
+                Button(action: {
+                    viewModel.selectedSection = .claudeMD
+                }) {
                     HStack {
-                        Image(systemName: version.changeType.icon)
-                            .foregroundColor(colorFor(version.changeType.color))
-                        Text("v\(version.version)")
-                            .font(.headline)
-                        Text(version.changeType.rawValue)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Image(systemName: "arrow.right.circle.fill")
+                        Text("View CLAUDE.md Files")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
                     }
-
-                    Text(version.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-
-                    if let summary = version.summary {
-                        Text(summary)
-                            .font(.caption2)
-                            .foregroundColor(.blue)
-                    }
-
-                    Text(version.timestamp.formatted())
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.accentColor.opacity(0.15))
+                    .cornerRadius(8)
                 }
-                .padding(.vertical, 4)
-                .tag(version)
+                .buttonStyle(.plain)
             }
-            .frame(minWidth: 250)
-
-            // Version content
-            if let version = selectedVersion {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding()
+        } else {
+            HSplitView {
+                // Version list
+                List(versions, selection: $selectedVersion) { version in
+                    VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("Version \(version.version)")
-                                .font(.title2)
-                                .fontWeight(.bold)
-
-                            Spacer()
-
-                            Text(version.timestamp.formatted())
+                            Image(systemName: version.changeType.icon)
+                                .foregroundColor(colorFor(version.changeType.color))
+                            Text("v\(version.version)")
+                                .font(.headline)
+                            Text(version.changeType.rawValue)
+                                .font(.caption)
                                 .foregroundColor(.secondary)
                         }
 
@@ -757,18 +851,53 @@ struct PromptArchaeologyView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
 
-                        Divider()
+                        if let summary = version.summary {
+                            Text(summary)
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                        }
 
-                        Text(version.content)
-                            .font(.system(.body, design: .monospaced))
-                            .textSelection(.enabled)
+                        Text(version.timestamp.formatted())
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
                     }
-                    .padding()
+                    .padding(.vertical, 4)
+                    .tag(version)
                 }
-            } else {
-                Text("Select a version to view its content")
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minWidth: 250)
+
+                // Version content
+                if let version = selectedVersion {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Version \(version.version)")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+
+                                Spacer()
+
+                                Text(version.timestamp.formatted())
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Text(version.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            Divider()
+
+                            Text(version.content)
+                                .font(.system(.body, design: .monospaced))
+                                .textSelection(.enabled)
+                        }
+                        .padding()
+                    }
+                } else {
+                    Text("Select a version to view its content")
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
     }
@@ -787,7 +916,8 @@ struct PromptArchaeologyView: View {
 // MARK: - Capability Coverage View
 
 struct CapabilityCoverageView: View {
-    let coverage: CapabilityCoverage
+    let coverage: CapabilityCoverage?
+    @ObservedObject var viewModel: ConfigViewModel
 
     var body: some View {
         ScrollView {
@@ -796,23 +926,24 @@ struct CapabilityCoverageView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
 
-                // Extension ratio gauge
-                HStack {
-                    Text("Extension Ratio")
-                        .font(.headline)
-                    Spacer()
+                if let coverage = coverage {
+                    // Extension ratio gauge
+                    HStack {
+                        Text("Extension Ratio")
+                            .font(.headline)
+                        Spacer()
 
-                    ProgressView(value: coverage.extensionRatio)
-                        .progressViewStyle(.linear)
-                        .frame(width: 200)
+                        ProgressView(value: coverage.extensionRatio)
+                            .progressViewStyle(.linear)
+                            .frame(width: 200)
 
-                    Text("\(Int(coverage.extensionRatio * 100))%")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(8)
+                        Text("\(Int(coverage.extensionRatio * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
 
                 // Domain coverage
                 GroupBox("Domains") {
@@ -914,6 +1045,14 @@ struct CapabilityCoverageView: View {
                         .padding()
                     }
                 }
+                } else {
+                    EmptyStateView(
+                        icon: "map",
+                        title: "Capability Map Pending",
+                        message: "The capability coverage map shows how your custom commands and skills extend Claude's base capabilities across different domains.",
+                        color: .green
+                    )
+                }
 
                 Spacer()
             }
@@ -980,7 +1119,8 @@ struct FlowLayout: Layout {
 // MARK: - Runtime State View
 
 struct RuntimeStateView: View {
-    let state: RuntimeState
+    let state: RuntimeState?
+    @ObservedObject var viewModel: ConfigViewModel
 
     var body: some View {
         ScrollView {
@@ -993,49 +1133,52 @@ struct RuntimeStateView: View {
 
                     Spacer()
 
-                    HStack {
-                        Circle()
-                            .fill(state.isActive ? Color.green : Color.gray)
-                            .frame(width: 12, height: 12)
-                        Text(state.isActive ? "Active" : "Inactive")
-                            .font(.subheadline)
-                    }
-                }
-
-                // Last activity
-                if let lastActivity = state.lastActivity {
-                    GroupBox {
+                    if let state = state {
                         HStack {
-                            Image(systemName: "clock")
-                                .foregroundColor(.blue)
-                            Text("Last Activity")
+                            Circle()
+                                .fill(state.isActive ? Color.green : Color.gray)
+                                .frame(width: 12, height: 12)
+                            Text(state.isActive ? "Active" : "Inactive")
                                 .font(.subheadline)
-                            Spacer()
-                            Text(lastActivity.formatted())
-                                .foregroundColor(.secondary)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
 
-                // Loaded plugins
-                GroupBox("Loaded Plugins (\(state.loadedPlugins.count))") {
-                    if state.loadedPlugins.isEmpty {
-                        Text("No plugins currently loaded")
-                            .foregroundColor(.secondary)
-                            .padding()
-                    } else {
-                        FlowLayout(spacing: 8) {
-                            ForEach(state.loadedPlugins, id: \.self) { plugin in
-                                HStack(spacing: 4) {
-                                    Image(systemName: "puzzlepiece.extension")
-                                        .font(.caption)
-                                    Text(plugin)
-                                        .font(.caption)
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Color.purple.opacity(0.2))
+                if let state = state {
+                    // Last activity
+                    if let lastActivity = state.lastActivity {
+                        GroupBox {
+                            HStack {
+                                Image(systemName: "clock")
+                                    .foregroundColor(.blue)
+                                Text("Last Activity")
+                                    .font(.subheadline)
+                                Spacer()
+                                Text(lastActivity.formatted())
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+
+                    // Loaded plugins
+                    GroupBox("Loaded Plugins (\(state.loadedPlugins.count))") {
+                        if state.loadedPlugins.isEmpty {
+                            Text("No plugins currently loaded")
+                                .foregroundColor(.secondary)
+                                .padding()
+                        } else {
+                            FlowLayout(spacing: 8) {
+                                ForEach(state.loadedPlugins, id: \.self) { plugin in
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "puzzlepiece.extension")
+                                            .font(.caption)
+                                        Text(plugin)
+                                            .font(.caption)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Color.purple.opacity(0.2))
                                 .cornerRadius(12)
                             }
                         }
@@ -1085,26 +1228,34 @@ struct RuntimeStateView: View {
                     }
                 }
 
-                // Memory usage (if available)
-                if let memory = state.memoryUsage {
-                    GroupBox("Context Memory") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("Tokens Used")
-                                Spacer()
-                                Text("\(memory.contextTokens) / \(memory.maxTokens)")
+                    // Memory usage (if available)
+                    if let memory = state.memoryUsage {
+                        GroupBox("Context Memory") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("Tokens Used")
+                                    Spacer()
+                                    Text("\(memory.contextTokens) / \(memory.maxTokens)")
+                                        .foregroundColor(.secondary)
+                                }
+
+                                ProgressView(value: memory.percentUsed / 100)
+                                    .progressViewStyle(.linear)
+
+                                Text("\(Int(memory.percentUsed))% of context window used")
+                                    .font(.caption)
                                     .foregroundColor(.secondary)
                             }
-
-                            ProgressView(value: memory.percentUsed / 100)
-                                .progressViewStyle(.linear)
-
-                            Text("\(Int(memory.percentUsed))% of context window used")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            .padding()
                         }
-                        .padding()
                     }
+                } else {
+                    EmptyStateView(
+                        icon: "gauge.with.dots.needle.bottom.50percent",
+                        title: "Runtime State Pending",
+                        message: "The runtime state shows Claude's current activity, loaded plugins, active hooks, and recent commands.",
+                        color: .blue
+                    )
                 }
 
                 Spacer()
@@ -1119,9 +1270,24 @@ struct RuntimeStateView: View {
 struct ExecutionTracesView: View {
     let traces: [ExecutionTrace]
     let sessions: [SessionInfo]
+    @ObservedObject var viewModel: ConfigViewModel
 
     var body: some View {
         VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Execution Traces")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                Spacer()
+
+                Text("\(sessions.count) sessions")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+
             // Summary bar
             HStack {
                 Text("\(sessions.count) sessions")
@@ -1135,18 +1301,12 @@ struct ExecutionTracesView: View {
             .background(Color.gray.opacity(0.1))
 
             if sessions.isEmpty && traces.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "doc.text.magnifyingglass")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
-                    Text("No execution traces available")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    Text("Traces will appear after using Claude commands")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EmptyStateView(
+                    icon: "list.bullet.rectangle",
+                    title: "No Execution Traces Available",
+                    message: "Execution traces record command usage, session history, and tool calls. This data is extracted from Claude's stats cache when available.",
+                    color: .orange
+                )
             } else {
                 List {
                     Section("Sessions") {
