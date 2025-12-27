@@ -674,6 +674,7 @@ struct CommandCreatorSheet: View {
 struct OverviewView: View {
     @ObservedObject var viewModel: ConfigViewModel
     @State private var showSuggestion = true
+    @State private var showMindMap = false
 
     var body: some View {
         ScrollView {
@@ -684,6 +685,11 @@ struct OverviewView: View {
                     issues: viewModel.config.healthIssues
                 )
 
+                // Capability Analysis Section - NOW AT TOP
+                if let analysis = viewModel.config.capabilityAnalysis, !analysis.categories.isEmpty {
+                    CapabilitySummaryView(analysis: analysis, showMindMap: $showMindMap)
+                }
+
                 // Suggestion Popup (dismissable)
                 if showSuggestion, let suggestion = viewModel.config.suggestion {
                     SuggestionCard(suggestion: suggestion, viewModel: viewModel) {
@@ -693,7 +699,7 @@ struct OverviewView: View {
                     }
                 }
 
-                // Config Hierarchy (moved to top)
+                // Config Hierarchy
                 GroupBox {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Configuration Hierarchy")
@@ -850,17 +856,14 @@ struct OverviewView: View {
                     }
                 }
 
-                // Capability Analysis Section
-                if let analysis = viewModel.config.capabilityAnalysis, !analysis.categories.isEmpty {
-                    CapabilitySummaryView(analysis: analysis)
-                        .onTapGesture {
-                            viewModel.selectedSection = .commands
-                        }
-                }
-
                 Spacer()
             }
             .padding()
+        }
+        .sheet(isPresented: $showMindMap) {
+            if let analysis = viewModel.config.capabilityAnalysis {
+                MindMapSheet(analysis: analysis, commands: viewModel.config.slashCommands)
+            }
         }
     }
 
@@ -1560,6 +1563,7 @@ struct PermissionsView: View {
 
 struct CapabilitySummaryView: View {
     let analysis: CapabilityAnalysis
+    @Binding var showMindMap: Bool
     @State private var isExpanded = false
 
     var body: some View {
@@ -1572,6 +1576,13 @@ struct CapabilitySummaryView: View {
                     Text("Capability Summary")
                         .font(.headline)
                     Spacer()
+
+                    Button(action: { showMindMap = true }) {
+                        Label("Mind Map", systemImage: "point.3.connected.trianglepath.dotted")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
                     Button(action: { withAnimation { isExpanded.toggle() } }) {
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                             .foregroundColor(.secondary)
@@ -1708,6 +1719,215 @@ struct CapabilityBarChart: View {
         case "indigo": return .indigo
         default: return .gray
         }
+    }
+}
+
+// MARK: - Mind Map Sheet
+
+struct MindMapSheet: View {
+    let analysis: CapabilityAnalysis
+    let commands: [SlashCommand]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Command Mind Map")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                Spacer()
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.escape)
+            }
+            .padding()
+            .background(Color(NSColor.windowBackgroundColor))
+
+            // Mind Map Canvas
+            ScrollView([.horizontal, .vertical]) {
+                MindMapCanvas(analysis: analysis, commands: commands)
+                    .frame(minWidth: 800, minHeight: 600)
+                    .padding(40)
+            }
+            .background(Color(NSColor.textBackgroundColor))
+        }
+        .frame(width: 900, height: 700)
+    }
+}
+
+struct MindMapCanvas: View {
+    let analysis: CapabilityAnalysis
+    let commands: [SlashCommand]
+
+    // Center position
+    let centerX: CGFloat = 400
+    let centerY: CGFloat = 300
+
+    var body: some View {
+        ZStack {
+            // Draw connection lines first (behind nodes)
+            ForEach(Array(analysis.categories.enumerated()), id: \.element.id) { index, category in
+                let angle = angleFor(index: index, total: analysis.categories.count)
+                let branchEnd = pointAt(angle: angle, distance: 180)
+
+                // Main branch line
+                Path { path in
+                    path.move(to: CGPoint(x: centerX, y: centerY))
+                    path.addLine(to: CGPoint(x: centerX + branchEnd.x, y: centerY + branchEnd.y))
+                }
+                .stroke(colorFor(category.color).opacity(0.5), lineWidth: 3)
+
+                // Sub-branch lines to commands
+                ForEach(Array(category.commands.prefix(5).enumerated()), id: \.offset) { cmdIndex, cmdName in
+                    let subAngle = angle + subAngleOffset(index: cmdIndex, total: min(category.commands.count, 5))
+                    let leafEnd = pointAt(angle: subAngle, distance: 280)
+
+                    Path { path in
+                        path.move(to: CGPoint(x: centerX + branchEnd.x, y: centerY + branchEnd.y))
+                        path.addLine(to: CGPoint(x: centerX + leafEnd.x, y: centerY + leafEnd.y))
+                    }
+                    .stroke(colorFor(category.color).opacity(0.3), lineWidth: 1.5)
+                }
+            }
+
+            // Central node
+            MindMapNode(
+                text: "Claude",
+                icon: "brain.head.profile",
+                color: .accentColor,
+                isCenter: true
+            )
+            .position(x: centerX, y: centerY)
+
+            // Category nodes and command leaves
+            ForEach(Array(analysis.categories.enumerated()), id: \.element.id) { index, category in
+                let angle = angleFor(index: index, total: analysis.categories.count)
+                let branchEnd = pointAt(angle: angle, distance: 180)
+
+                // Category node
+                MindMapNode(
+                    text: category.name,
+                    icon: category.icon,
+                    color: colorFor(category.color),
+                    count: category.count
+                )
+                .position(x: centerX + branchEnd.x, y: centerY + branchEnd.y)
+
+                // Command leaf nodes (show up to 5)
+                ForEach(Array(category.commands.prefix(5).enumerated()), id: \.offset) { cmdIndex, cmdName in
+                    let subAngle = angle + subAngleOffset(index: cmdIndex, total: min(category.commands.count, 5))
+                    let leafEnd = pointAt(angle: subAngle, distance: 280)
+
+                    MindMapLeaf(text: "/\(cmdName)", color: colorFor(category.color))
+                        .position(x: centerX + leafEnd.x, y: centerY + leafEnd.y)
+                }
+
+                // "More" indicator if there are more than 5 commands
+                if category.commands.count > 5 {
+                    let moreAngle = angle + subAngleOffset(index: 5, total: 6)
+                    let moreEnd = pointAt(angle: moreAngle, distance: 280)
+
+                    Text("+\(category.commands.count - 5) more")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .position(x: centerX + moreEnd.x, y: centerY + moreEnd.y)
+                }
+            }
+        }
+    }
+
+    func angleFor(index: Int, total: Int) -> Double {
+        let startAngle = -Double.pi / 2 // Start from top
+        let angleStep = (2 * Double.pi) / Double(total)
+        return startAngle + Double(index) * angleStep
+    }
+
+    func subAngleOffset(index: Int, total: Int) -> Double {
+        let spread = Double.pi / 4 // 45 degree spread for sub-items
+        let step = spread / Double(max(total - 1, 1))
+        return -spread / 2 + Double(index) * step
+    }
+
+    func pointAt(angle: Double, distance: CGFloat) -> CGPoint {
+        CGPoint(
+            x: CGFloat(cos(angle)) * distance,
+            y: CGFloat(sin(angle)) * distance
+        )
+    }
+
+    func colorFor(_ colorName: String) -> Color {
+        switch colorName {
+        case "blue": return .blue
+        case "green": return .green
+        case "orange": return .orange
+        case "purple": return .purple
+        case "pink": return .pink
+        case "red": return .red
+        case "teal": return .teal
+        case "indigo": return .indigo
+        default: return .gray
+        }
+    }
+}
+
+struct MindMapNode: View {
+    let text: String
+    let icon: String
+    let color: Color
+    var isCenter: Bool = false
+    var count: Int? = nil
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.2))
+                    .frame(width: isCenter ? 80 : 60, height: isCenter ? 80 : 60)
+
+                Circle()
+                    .stroke(color, lineWidth: isCenter ? 3 : 2)
+                    .frame(width: isCenter ? 80 : 60, height: isCenter ? 80 : 60)
+
+                Image(systemName: icon)
+                    .font(isCenter ? .title : .title3)
+                    .foregroundColor(color)
+            }
+
+            Text(text)
+                .font(isCenter ? .headline : .caption)
+                .fontWeight(isCenter ? .bold : .medium)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(maxWidth: 100)
+
+            if let count = count {
+                Text("\(count)")
+                    .font(.caption2)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(color)
+                    .cornerRadius(8)
+            }
+        }
+    }
+}
+
+struct MindMapLeaf: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        Text(text)
+            .font(.system(.caption, design: .monospaced))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.15))
+            .cornerRadius(6)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(color.opacity(0.3), lineWidth: 1)
+            )
     }
 }
 
