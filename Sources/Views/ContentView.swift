@@ -72,6 +72,45 @@ struct SidebarView: View {
                     Label("Account Info", systemImage: "person.circle")
                 }
             }
+
+            Section("Control Plane") {
+                NavigationLink(value: NavSection.controlPlane) {
+                    Label("Overview", systemImage: "cpu")
+                }
+
+                NavigationLink(value: NavSection.safety) {
+                    Label("Safety Dashboard", systemImage: "shield.checkered")
+                }
+                .badge(viewModel.cpConfig.safetyDashboard?.safetyScore ?? 0)
+
+                NavigationLink(value: NavSection.interactions) {
+                    Label("Interaction Graph", systemImage: "point.3.connected.trianglepath.dotted")
+                }
+                .badge(viewModel.cpConfig.interactionGraph?.nodes.count ?? 0)
+
+                NavigationLink(value: NavSection.dependencies) {
+                    Label("Dependencies", systemImage: "arrow.triangle.branch")
+                }
+                .badge(viewModel.cpConfig.conflictCount)
+
+                NavigationLink(value: NavSection.archaeology) {
+                    Label("Prompt History", systemImage: "clock.arrow.circlepath")
+                }
+                .badge(viewModel.cpConfig.promptVersions.count)
+
+                NavigationLink(value: NavSection.coverage) {
+                    Label("Capability Map", systemImage: "map")
+                }
+
+                NavigationLink(value: NavSection.runtime) {
+                    Label("Runtime State", systemImage: "gauge.with.dots.needle.bottom.50percent")
+                }
+
+                NavigationLink(value: NavSection.traces) {
+                    Label("Execution Traces", systemImage: "list.bullet.rectangle")
+                }
+                .badge(viewModel.cpConfig.sessions.count)
+            }
         }
         .listStyle(.sidebar)
         .frame(minWidth: 200)
@@ -100,6 +139,43 @@ struct DetailView: View {
                 PermissionsView(settings: viewModel.config.settings, localSettings: viewModel.config.localSettings)
             case .account:
                 AccountInfoView(accountInfo: viewModel.config.accountInfo)
+            // Control Plane sections
+            case .controlPlane:
+                ControlPlaneOverview(cpConfig: viewModel.cpConfig)
+            case .safety:
+                if let dashboard = viewModel.cpConfig.safetyDashboard {
+                    SafetyDashboardView(dashboard: dashboard)
+                } else {
+                    Text("Safety dashboard not available")
+                        .foregroundColor(.secondary)
+                }
+            case .interactions:
+                if let graph = viewModel.cpConfig.interactionGraph {
+                    InteractionGraphView(graph: graph)
+                } else {
+                    Text("Interaction graph not available")
+                        .foregroundColor(.secondary)
+                }
+            case .dependencies:
+                DependencyView(dependencies: viewModel.cpConfig.dependencies, conflicts: viewModel.cpConfig.conflicts)
+            case .archaeology:
+                PromptArchaeologyView(versions: viewModel.cpConfig.promptVersions)
+            case .coverage:
+                if let coverage = viewModel.cpConfig.capabilityCoverage {
+                    CapabilityCoverageView(coverage: coverage)
+                } else {
+                    Text("Capability coverage not available")
+                        .foregroundColor(.secondary)
+                }
+            case .runtime:
+                if let state = viewModel.cpConfig.runtimeState {
+                    RuntimeStateView(state: state)
+                } else {
+                    Text("Runtime state not available")
+                        .foregroundColor(.secondary)
+                }
+            case .traces:
+                ExecutionTracesView(traces: viewModel.cpConfig.executionTraces, sessions: viewModel.cpConfig.sessions)
             }
         }
         .frame(minWidth: 500)
@@ -1959,4 +2035,13 @@ enum NavSection: Hashable {
     case cron
     case permissions
     case account
+    // Control Plane sections
+    case controlPlane
+    case safety
+    case interactions
+    case dependencies
+    case archaeology
+    case coverage
+    case runtime
+    case traces
 }

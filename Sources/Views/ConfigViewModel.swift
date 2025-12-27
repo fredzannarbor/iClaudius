@@ -3,17 +3,20 @@ import SwiftUI
 @MainActor
 class ConfigViewModel: ObservableObject {
     @Published var config = ClaudeConfiguration()
+    @Published var cpConfig = ControlPlaneConfiguration()
     @Published var selectedSection: NavSection = .overview
     @Published var isLoading = false
     @Published var error: String?
     @Published var successMessage: String?
 
     private let scanner = ConfigScanner()
+    private let cpScanner = ControlPlaneScanner()
 
     func load() async {
         isLoading = true
         error = nil
         config = await scanner.scanAll()
+        cpConfig = await cpScanner.scanControlPlane(baseConfig: config)
         isLoading = false
     }
 
