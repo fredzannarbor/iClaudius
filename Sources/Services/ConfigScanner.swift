@@ -113,34 +113,30 @@ actor ConfigScanner {
         let examples = commands.prefix(3).map { "/\($0)" }.joined(separator: ", ")
 
         switch category {
-        case .publishing:
-            return "Book publishing and production workflows (\(examples))"
-        case .content:
-            return "Content creation and writing tools (\(examples))"
+        case .accountability:
+            return "Track commitments, promises, and personal reflection (\(examples))"
         case .health:
-            return "Health and fitness tracking (\(examples))"
+            return "Monitor health metrics and wellness (\(examples))"
         case .finance:
-            return "Financial management and budgeting (\(examples))"
-        case .workflow:
-            return "Automate repetitive tasks and processes (\(examples))"
-        case .codeQuality:
-            return "Enhance code review and quality checks (\(examples))"
+            return "Budget tracking and financial planning (\(examples))"
+        case .publishing:
+            return "Book metadata, queues, and distribution (\(examples))"
+        case .creative:
+            return "Ideation and creative development workflows (\(examples))"
+        case .uxTesting:
+            return "Virtual user testing with personas (\(examples))"
+        case .distribution:
+            return "App Store assets and launch preparation (\(examples))"
         case .versionControl:
-            return "Streamline git and PR workflows (\(examples))"
-        case .documentation:
-            return "Generate and maintain documentation (\(examples))"
-        case .testing:
-            return "Run and manage tests (\(examples))"
+            return "Git workflows and PR management (\(examples))"
+        case .codeQuality:
+            return "Code review and quality checks (\(examples))"
         case .deployment:
-            return "Deploy and publish applications (\(examples))"
-        case .projectMgmt:
-            return "Track tasks and manage projects (\(examples))"
-        case .dataProcessing:
-            return "Transform and process data (\(examples))"
-        case .research:
-            return "Research and analysis tools (\(examples))"
-        case .social:
-            return "Social and community features (\(examples))"
+            return "Build and deploy applications (\(examples))"
+        case .workflow:
+            return "Task automation and queue processing (\(examples))"
+        case .infrastructure:
+            return "Development tools and configuration (\(examples))"
         case .custom:
             return "Custom extensions (\(examples))"
         }
