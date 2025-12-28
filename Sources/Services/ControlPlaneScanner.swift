@@ -585,21 +585,30 @@ actor ControlPlaneScanner {
             for projectDir in projectDirs.prefix(10) { // Limit to recent 10
                 let projectPath = "\(projectsDir)/\(projectDir)"
 
-                // Each project directory may have session files
+                // Each project directory has .jsonl session files
                 if let sessionFiles = try? fileManager.contentsOfDirectory(atPath: projectPath) {
-                    for sessionFile in sessionFiles.filter({ $0.hasSuffix(".json") }).prefix(5) {
-                        // Get file modification date
+                    // Filter for .jsonl files (session logs)
+                    let jsonlFiles = sessionFiles.filter({ $0.hasSuffix(".jsonl") })
+
+                    for sessionFile in jsonlFiles.prefix(5) {
+                        // Get file modification date and size
                         let filePath = "\(projectPath)/\(sessionFile)"
                         let attrs = try? fileManager.attributesOfItem(atPath: filePath)
                         let modDate = attrs?[.modificationDate] as? Date ?? Date()
+                        let fileSize = attrs?[.size] as? Int ?? 0
+
+                        // Clean up project name for display
+                        let displayName = projectDir
+                            .replacingOccurrences(of: "-Users-fred-", with: "")
+                            .replacingOccurrences(of: "-", with: "/")
 
                         traces.append(ExecutionTrace(
                             timestamp: modDate,
-                            commandName: "Session: \(projectDir)",
-                            sessionId: sessionFile,
+                            commandName: displayName,
+                            sessionId: String(sessionFile.prefix(8)), // First 8 chars of UUID
                             status: .success,
                             duration: 0,
-                            tokensUsed: nil,
+                            tokensUsed: fileSize > 0 ? fileSize / 1000 : nil, // Rough estimate
                             toolCalls: [],
                             errorMessage: nil
                         ))
