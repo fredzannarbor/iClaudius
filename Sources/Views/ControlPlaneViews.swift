@@ -1282,6 +1282,17 @@ struct ExecutionTracesView: View {
         let _ = print("[ExecutionTracesView] Rendering with \(sessions.count) sessions, \(traces.count) traces")
 
         VStack(spacing: 0) {
+            // DEBUG: Simple test that always shows
+            Text("🔴 DEBUG: If you see this, SwiftUI rendering works!")
+                .font(.headline)
+                .foregroundColor(.red)
+                .padding()
+                .background(Color.yellow)
+
+            Text("Sessions count from viewModel: \(viewModel.cpConfig.sessions.count)")
+                .padding()
+                .background(Color.green.opacity(0.3))
+
             // Header
             HStack {
                 Text("Execution Traces")
