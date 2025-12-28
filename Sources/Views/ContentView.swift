@@ -158,13 +158,13 @@ struct DetailView: View {
             case .dependencies:
                 DependencyView(dependencies: viewModel.cpConfig.dependencies, conflicts: viewModel.cpConfig.conflicts, viewModel: viewModel)
             case .archaeology:
-                PromptArchaeologyView(versions: viewModel.cpConfig.promptVersions, viewModel: viewModel)
+                PromptArchaeologyView(viewModel: viewModel)
             case .coverage:
                 CapabilityCoverageView(coverage: viewModel.cpConfig.capabilityCoverage, viewModel: viewModel)
             case .runtime:
                 RuntimeStateView(state: viewModel.cpConfig.runtimeState, viewModel: viewModel)
             case .traces:
-                ExecutionTracesView(traces: viewModel.cpConfig.executionTraces, sessions: viewModel.cpConfig.sessions, viewModel: viewModel)
+                ExecutionTracesView(viewModel: viewModel)
             }
         }
         .frame(minWidth: 500)

@@ -796,11 +796,15 @@ struct DependencyView: View {
 // MARK: - Prompt Archaeology View
 
 struct PromptArchaeologyView: View {
-    let versions: [PromptVersion]
     @ObservedObject var viewModel: ConfigViewModel
     @State private var selectedVersion: PromptVersion?
 
+    // Read from viewModel to get live updates
+    private var versions: [PromptVersion] { viewModel.cpConfig.promptVersions }
+
     var body: some View {
+        let _ = print("[PromptArchaeologyView] Rendering with \(versions.count) versions")
+
         if versions.isEmpty {
             VStack(spacing: 20) {
                 Text("Prompt History")
@@ -1268,11 +1272,15 @@ struct RuntimeStateView: View {
 // MARK: - Execution Traces View
 
 struct ExecutionTracesView: View {
-    let traces: [ExecutionTrace]
-    let sessions: [SessionInfo]
     @ObservedObject var viewModel: ConfigViewModel
 
+    // Read from viewModel to get live updates
+    private var traces: [ExecutionTrace] { viewModel.cpConfig.executionTraces }
+    private var sessions: [SessionInfo] { viewModel.cpConfig.sessions }
+
     var body: some View {
+        let _ = print("[ExecutionTracesView] Rendering with \(sessions.count) sessions, \(traces.count) traces")
+
         VStack(spacing: 0) {
             // Header
             HStack {
