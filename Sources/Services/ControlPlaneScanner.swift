@@ -953,10 +953,10 @@ actor ControlPlaneScanner {
             .filter { $0.content.lowercased().contains("hook") }
             .map { $0.name }
 
-        // Get loaded plugins
-        let loadedPlugins = baseConfig.plugins
+        // Get loaded plugins (deduplicated)
+        let loadedPlugins = Array(Set(baseConfig.plugins
             .filter { $0.isEnabled }
-            .map { $0.name }
+            .map { $0.name }))
 
         return RuntimeState(
             isActive: isActive,

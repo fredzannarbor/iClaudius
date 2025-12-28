@@ -933,7 +933,7 @@ struct CapabilityCoverageView: View {
                             .font(.headline)
                         Spacer()
 
-                        ProgressView(value: coverage.extensionRatio)
+                        ProgressView(value: min(max(coverage.extensionRatio, 0), 1))
                             .progressViewStyle(.linear)
                             .frame(width: 200)
 
@@ -975,7 +975,7 @@ struct CapabilityCoverageView: View {
                                         .cornerRadius(4)
                                 }
 
-                                ProgressView(value: domain.coverage)
+                                ProgressView(value: min(max(domain.coverage, 0), 1))
                                     .progressViewStyle(.linear)
                                     .frame(width: 60)
                             }
@@ -1169,7 +1169,7 @@ struct RuntimeStateView: View {
                                 .padding()
                         } else {
                             FlowLayout(spacing: 8) {
-                                ForEach(state.loadedPlugins, id: \.self) { plugin in
+                                ForEach(Array(state.loadedPlugins.enumerated()), id: \.offset) { index, plugin in
                                     HStack(spacing: 4) {
                                         Image(systemName: "puzzlepiece.extension")
                                             .font(.caption)
@@ -1179,12 +1179,12 @@ struct RuntimeStateView: View {
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
                                     .background(Color.purple.opacity(0.2))
-                                .cornerRadius(12)
+                                    .cornerRadius(12)
+                                }
                             }
+                            .padding()
                         }
-                        .padding()
                     }
-                }
 
                 // Active hooks
                 GroupBox("Active Hooks (\(state.activeHooks.count))") {
@@ -1194,7 +1194,7 @@ struct RuntimeStateView: View {
                             .padding()
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
-                            ForEach(state.activeHooks, id: \.self) { hook in
+                            ForEach(Array(state.activeHooks.enumerated()), id: \.offset) { index, hook in
                                 HStack {
                                     Image(systemName: "link")
                                         .foregroundColor(.orange)
@@ -1215,7 +1215,7 @@ struct RuntimeStateView: View {
                             .padding()
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
-                            ForEach(state.recentCommands, id: \.self) { cmd in
+                            ForEach(Array(state.recentCommands.enumerated()), id: \.offset) { index, cmd in
                                 HStack {
                                     Image(systemName: "terminal")
                                         .foregroundColor(.green)
@@ -1239,7 +1239,7 @@ struct RuntimeStateView: View {
                                         .foregroundColor(.secondary)
                                 }
 
-                                ProgressView(value: memory.percentUsed / 100)
+                                ProgressView(value: min(max(memory.percentUsed / 100, 0), 1))
                                     .progressViewStyle(.linear)
 
                                 Text("\(Int(memory.percentUsed))% of context window used")
