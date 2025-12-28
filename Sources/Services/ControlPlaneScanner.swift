@@ -304,33 +304,52 @@ actor ControlPlaneScanner {
         }
 
         for (name, paths) in commandNames where paths.count > 1 {
+            let fileNames = paths.map { ($0 as NSString).lastPathComponent }.joined(separator: ", ")
             conflicts.append(Conflict(
                 entities: paths,
                 type: .nameCollision,
                 severity: .critical,
-                description: "Command /\(name) is defined in multiple locations",
+                description: "Command /\(name) defined in: \(fileNames)",
                 resolution: "Remove duplicate definitions or rename one of the commands"
             ))
         }
 
         // Check for contradictory instructions in CLAUDE.md files
-        let contradictionPairs: [(String, String)] = [
-            ("always", "never"),
-            ("must", "must not"),
-            ("required", "forbidden")
+        let contradictionPairs: [(String, String, String)] = [
+            ("always", "never", "contradictory frequency"),
+            ("must", "must not", "contradictory requirement"),
+            ("required", "forbidden", "contradictory mandate")
         ]
 
         for file in config.claudeMDFiles {
             let content = file.content.lowercased()
-            for (word1, word2) in contradictionPairs {
+            let fileName = file.filename
+            let fileLevel = file.level.rawValue
+
+            for (word1, word2, context) in contradictionPairs {
                 if content.contains(word1) && content.contains(word2) {
-                    // This is a simple heuristic - could be refined
+                    // Find lines containing these words for more context
+                    let lines = file.content.components(separatedBy: .newlines)
+                    var exampleLines: [String] = []
+
+                    for line in lines {
+                        let lower = line.lowercased()
+                        if lower.contains(word1) || lower.contains(word2) {
+                            let trimmed = line.trimmingCharacters(in: .whitespaces)
+                            if trimmed.count > 10 && exampleLines.count < 2 {
+                                exampleLines.append(String(trimmed.prefix(60)) + (trimmed.count > 60 ? "..." : ""))
+                            }
+                        }
+                    }
+
+                    let exampleText = exampleLines.isEmpty ? "" : " Example: \"\(exampleLines.first ?? "")\""
+
                     conflicts.append(Conflict(
                         entities: [file.path],
                         type: .contradictoryInstructions,
                         severity: .warning,
-                        description: "File contains potentially contradictory language ('\(word1)' and '\(word2)')",
-                        resolution: "Review and clarify the instructions"
+                        description: "[\(fileLevel)] \(fileName): \(context) ('\(word1)' vs '\(word2)').\(exampleText)",
+                        resolution: "Review \(fileName) and clarify the instructions to avoid ambiguity"
                     ))
                 }
             }
@@ -338,7 +357,7 @@ actor ControlPlaneScanner {
 
         // Check for permission conflicts
         if let settings = config.settings?.permissions,
-           let _ = config.localSettings?.permissions {
+           let localPerms = config.localSettings?.permissions {
             // If something is in both allow and deny
             let allowed = Set(settings.allow ?? [])
             let denied = Set(settings.deny ?? [])
@@ -346,11 +365,37 @@ actor ControlPlaneScanner {
 
             for item in overlap {
                 conflicts.append(Conflict(
-                    entities: [item],
+                    entities: ["settings.json", "settings.local.json"],
                     type: .permissionConflict,
                     severity: .critical,
-                    description: "'\(item)' is in both allow and deny lists",
-                    resolution: "Remove from one of the lists"
+                    description: "'\(item)' is in both allow and deny lists across settings files",
+                    resolution: "Remove from one of the lists in settings.json or settings.local.json"
+                ))
+            }
+
+            // Also check for local overrides conflicting with global
+            let localAllowed = Set(localPerms.allow ?? [])
+            let localDenied = Set(localPerms.deny ?? [])
+
+            let globalAllowLocalDeny = allowed.intersection(localDenied)
+            for item in globalAllowLocalDeny {
+                conflicts.append(Conflict(
+                    entities: ["settings.json (allow)", "settings.local.json (deny)"],
+                    type: .permissionConflict,
+                    severity: .warning,
+                    description: "'\(item)' allowed globally but denied locally",
+                    resolution: "This may be intentional (local override), but verify the intent"
+                ))
+            }
+
+            let globalDenyLocalAllow = denied.intersection(localAllowed)
+            for item in globalDenyLocalAllow {
+                conflicts.append(Conflict(
+                    entities: ["settings.json (deny)", "settings.local.json (allow)"],
+                    type: .permissionConflict,
+                    severity: .warning,
+                    description: "'\(item)' denied globally but allowed locally - security concern",
+                    resolution: "Local settings are overriding global security restrictions"
                 ))
             }
         }
@@ -522,9 +567,71 @@ actor ControlPlaneScanner {
     // MARK: - Execution Traces
 
     private func loadExecutionTraces() async -> [ExecutionTrace] {
-        // Would parse from Claude's session logs if available
-        // For now, return empty array as this requires parsing session data
-        return []
+        var traces: [ExecutionTrace] = []
+
+        // Look for session directories in ~/.claude/projects
+        let projectsDir = "\(homeDir)/.claude/projects"
+        if let projectDirs = try? fileManager.contentsOfDirectory(atPath: projectsDir) {
+            for projectDir in projectDirs.prefix(10) { // Limit to recent 10
+                let projectPath = "\(projectsDir)/\(projectDir)"
+
+                // Each project directory may have session files
+                if let sessionFiles = try? fileManager.contentsOfDirectory(atPath: projectPath) {
+                    for sessionFile in sessionFiles.filter({ $0.hasSuffix(".json") }).prefix(5) {
+                        // Get file modification date
+                        let filePath = "\(projectPath)/\(sessionFile)"
+                        let attrs = try? fileManager.attributesOfItem(atPath: filePath)
+                        let modDate = attrs?[.modificationDate] as? Date ?? Date()
+
+                        traces.append(ExecutionTrace(
+                            timestamp: modDate,
+                            commandName: "Session: \(projectDir)",
+                            sessionId: sessionFile,
+                            status: .success,
+                            duration: 0,
+                            tokensUsed: nil,
+                            toolCalls: [],
+                            errorMessage: nil
+                        ))
+                    }
+                }
+            }
+        }
+
+        // Also check for recent tool usage in stats
+        let statsPath = "\(homeDir)/.claude/stats-cache.json"
+        if let data = try? Data(contentsOf: URL(fileURLWithPath: statsPath)),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+
+            // Extract tool call counts
+            if let toolCalls = json["toolCallCount"] as? Int, toolCalls > 0 {
+                traces.append(ExecutionTrace(
+                    timestamp: Date(),
+                    commandName: "Aggregate Stats",
+                    sessionId: "tool-summary",
+                    status: .success,
+                    duration: 0,
+                    tokensUsed: nil,
+                    toolCalls: ["Total: \(toolCalls) tool calls"],
+                    errorMessage: nil
+                ))
+            }
+
+            if let messages = json["messageCount"] as? Int, messages > 0 {
+                traces.append(ExecutionTrace(
+                    timestamp: Date(),
+                    commandName: "Message History",
+                    sessionId: "message-summary",
+                    status: .success,
+                    duration: 0,
+                    tokensUsed: messages,
+                    toolCalls: [],
+                    errorMessage: nil
+                ))
+            }
+        }
+
+        return traces
     }
 
     private func loadSessions() async -> [SessionInfo] {
@@ -533,24 +640,70 @@ actor ControlPlaneScanner {
         // Parse from stats-cache.json
         let statsPath = "\(homeDir)/.claude/stats-cache.json"
         if let data = try? Data(contentsOf: URL(fileURLWithPath: statsPath)),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let dailyActivity = json["dailyActivity"] as? [[String: Any]] {
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
 
-            for day in dailyActivity {
-                if let sessionCount = day["sessionCount"] as? Int,
-                   let messageCount = day["messageCount"] as? Int,
-                   let dateStr = day["date"] as? String,
-                   sessionCount > 0 {
+            // Try the dailyActivity format
+            if let dailyActivity = json["dailyActivity"] as? [[String: Any]] {
+                for day in dailyActivity {
+                    if let sessionCount = day["sessionCount"] as? Int,
+                       let messageCount = day["messageCount"] as? Int,
+                       let dateStr = day["date"] as? String,
+                       sessionCount > 0 {
 
-                    let formatter = ISO8601DateFormatter()
-                    if let date = formatter.date(from: dateStr) {
+                        let formatter = ISO8601DateFormatter()
+                        if let date = formatter.date(from: dateStr) {
+                            sessions.append(SessionInfo(
+                                id: dateStr,
+                                startTime: date,
+                                endTime: Calendar.current.date(byAdding: .hour, value: 8, to: date),
+                                messageCount: messageCount,
+                                toolCallCount: day["toolCallCount"] as? Int ?? 0,
+                                commandsUsed: [],
+                                status: .completed
+                            ))
+                        }
+                    }
+                }
+            }
+
+            // If no dailyActivity, create summary from totals
+            if sessions.isEmpty {
+                let messageCount = json["messageCount"] as? Int ?? 0
+                let sessionCount = json["sessionCount"] as? Int ?? 0
+                let toolCallCount = json["toolCallCount"] as? Int ?? 0
+
+                if messageCount > 0 || sessionCount > 0 {
+                    sessions.append(SessionInfo(
+                        id: "aggregate-stats",
+                        startTime: Date(),
+                        endTime: nil,
+                        messageCount: messageCount,
+                        toolCallCount: toolCallCount,
+                        commandsUsed: [],
+                        status: .completed
+                    ))
+                }
+            }
+        }
+
+        // If still empty, scan for project directories to show some activity
+        if sessions.isEmpty {
+            let projectsDir = "\(homeDir)/.claude/projects"
+            if let projectDirs = try? fileManager.contentsOfDirectory(atPath: projectsDir) {
+                for (index, projectDir) in projectDirs.prefix(5).enumerated() {
+                    let projectPath = "\(projectsDir)/\(projectDir)"
+                    var isDirectory: ObjCBool = false
+                    if fileManager.fileExists(atPath: projectPath, isDirectory: &isDirectory), isDirectory.boolValue {
+                        let attrs = try? fileManager.attributesOfItem(atPath: projectPath)
+                        let modDate = attrs?[.modificationDate] as? Date ?? Date()
+
                         sessions.append(SessionInfo(
-                            id: dateStr,
-                            startTime: date,
-                            endTime: Calendar.current.date(byAdding: .hour, value: 8, to: date),
-                            messageCount: messageCount,
-                            toolCallCount: day["toolCallCount"] as? Int ?? 0,
-                            commandsUsed: [],
+                            id: "project-\(index)",
+                            startTime: modDate,
+                            endTime: nil,
+                            messageCount: 0,
+                            toolCallCount: 0,
+                            commandsUsed: [projectDir],
                             status: .completed
                         ))
                     }
@@ -567,6 +720,8 @@ actor ControlPlaneScanner {
         var versions: [PromptVersion] = []
 
         for file in files {
+            var hasGitHistory = false
+
             // Try to get git history for the file
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
@@ -584,32 +739,45 @@ actor ControlPlaneScanner {
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 if let output = String(data: data, encoding: .utf8) {
                     let commits = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
-                    for (index, commit) in commits.enumerated() {
-                        let parts = commit.components(separatedBy: " ")
-                        let summary = parts.dropFirst().joined(separator: " ")
+                    if !commits.isEmpty {
+                        hasGitHistory = true
+                        for (index, commit) in commits.enumerated() {
+                            let parts = commit.components(separatedBy: " ")
+                            let summary = parts.dropFirst().joined(separator: " ")
 
-                        versions.append(PromptVersion(
-                            path: file.path,
-                            version: commits.count - index,
-                            timestamp: file.lastModified ?? Date(),
-                            content: file.content,
-                            changeType: index == 0 ? .modified : .modified,
-                            summary: summary
-                        ))
+                            versions.append(PromptVersion(
+                                path: file.path,
+                                version: commits.count - index,
+                                timestamp: file.lastModified ?? Date(),
+                                content: file.content,
+                                changeType: index == 0 ? .modified : .modified,
+                                summary: summary
+                            ))
+                        }
                     }
                 }
             } catch {
-                // No git history available
+                // Git failed, will add current version below
+            }
+
+            // Always add at least the current version if no git history
+            if !hasGitHistory {
+                // Determine change type based on file level
+                let changeType: PromptVersion.ChangeType = file.level == .global ? .created : .modified
+
                 versions.append(PromptVersion(
                     path: file.path,
                     version: 1,
                     timestamp: file.lastModified ?? Date(),
                     content: file.content,
-                    changeType: .created,
-                    summary: "Current version"
+                    changeType: changeType,
+                    summary: "[\(file.level.rawValue)] \(file.filename)"
                 ))
             }
         }
+
+        // Sort by timestamp descending
+        versions.sort { ($0.timestamp) > ($1.timestamp) }
 
         return versions
     }
