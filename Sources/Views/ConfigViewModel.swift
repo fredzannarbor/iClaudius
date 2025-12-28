@@ -13,11 +13,20 @@ class ConfigViewModel: ObservableObject {
     private let cpScanner = ControlPlaneScanner()
 
     func load() async {
+        // Set loading state
         isLoading = true
         error = nil
-        config = await scanner.scanAll()
-        cpConfig = await cpScanner.scanControlPlane(baseConfig: config)
-        isLoading = false
+
+        // Fetch data from scanners (off main thread work happens inside actors)
+        let newConfig = await scanner.scanAll()
+        let newCpConfig = await cpScanner.scanControlPlane(baseConfig: newConfig)
+
+        // Schedule updates for next run loop cycle to avoid "publishing during view update"
+        DispatchQueue.main.async { [weak self] in
+            self?.config = newConfig
+            self?.cpConfig = newCpConfig
+            self?.isLoading = false
+        }
     }
 
     func refresh() async {
