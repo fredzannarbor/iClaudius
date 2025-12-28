@@ -4,11 +4,14 @@ struct ContentView: View {
     @StateObject private var viewModel = ConfigViewModel()
 
     var body: some View {
+        let _ = NSLog("[ContentView] body being evaluated, selectedSection=\(viewModel.selectedSection)")
+
         NavigationSplitView {
             SidebarView(viewModel: viewModel)
         } detail: {
             DetailView(viewModel: viewModel)
         }
+        .frame(minWidth: 800, minHeight: 600)
         .navigationTitle("iClaudius")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -28,101 +31,140 @@ struct ContentView: View {
 
 struct SidebarView: View {
     @ObservedObject var viewModel: ConfigViewModel
-    @State private var selection: NavSection? = .overview
 
     var body: some View {
-        List(selection: $selection) {
+        List(selection: $viewModel.selectedSection) {
             Section("Configuration") {
-                NavigationLink(value: NavSection.overview) {
-                    Label("Overview", systemImage: "square.grid.2x2")
-                }
+                Label("Overview", systemImage: "square.grid.2x2")
+                    .tag(NavSection.overview)
 
-                NavigationLink(value: NavSection.claudeMD) {
+                HStack {
                     Label("CLAUDE.md Files", systemImage: "doc.text")
+                    Spacer()
+                    if viewModel.config.claudeMDFiles.count > 0 {
+                        Text("\(viewModel.config.claudeMDFiles.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.config.claudeMDFiles.count)
+                .tag(NavSection.claudeMD)
             }
 
             Section("Commands & Skills") {
-                NavigationLink(value: NavSection.commands) {
+                HStack {
                     Label("Custom Slash Commands", systemImage: "terminal")
+                    Spacer()
+                    if viewModel.config.totalCommandCount > 0 {
+                        Text("\(viewModel.config.totalCommandCount)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.config.totalCommandCount)
+                .tag(NavSection.commands)
             }
 
             Section("Extensions") {
-                NavigationLink(value: NavSection.plugins) {
+                HStack {
                     Label("Plugins", systemImage: "puzzlepiece.extension")
+                    Spacer()
+                    if viewModel.config.plugins.count > 0 {
+                        Text("\(viewModel.config.plugins.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.config.plugins.count)
+                .tag(NavSection.plugins)
             }
 
             Section("Automation") {
-                NavigationLink(value: NavSection.cron) {
+                HStack {
                     Label("Scheduled Jobs", systemImage: "clock")
+                    Spacer()
+                    if viewModel.config.cronJobs.count > 0 {
+                        Text("\(viewModel.config.cronJobs.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.config.cronJobs.count)
+                .tag(NavSection.cron)
             }
 
             Section("Settings") {
-                NavigationLink(value: NavSection.permissions) {
-                    Label("Permissions", systemImage: "lock.shield")
-                }
+                Label("Permissions", systemImage: "lock.shield")
+                    .tag(NavSection.permissions)
 
-                NavigationLink(value: NavSection.account) {
-                    Label("Account Info", systemImage: "person.circle")
-                }
+                Label("Account Info", systemImage: "person.circle")
+                    .tag(NavSection.account)
             }
 
             Section("Control Plane") {
-                NavigationLink(value: NavSection.controlPlane) {
-                    Label("Overview", systemImage: "cpu")
-                }
+                Label("Overview", systemImage: "cpu")
+                    .tag(NavSection.controlPlane)
 
-                NavigationLink(value: NavSection.safety) {
+                HStack {
                     Label("Safety Dashboard", systemImage: "shield.checkered")
+                    Spacer()
+                    if let score = viewModel.cpConfig.safetyDashboard?.safetyScore, score > 0 {
+                        Text("\(score)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.cpConfig.safetyDashboard?.safetyScore ?? 0)
+                .tag(NavSection.safety)
 
-                NavigationLink(value: NavSection.interactions) {
+                HStack {
                     Label("Interaction Graph", systemImage: "point.3.connected.trianglepath.dotted")
+                    Spacer()
+                    if let count = viewModel.cpConfig.interactionGraph?.nodes.count, count > 0 {
+                        Text("\(count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.cpConfig.interactionGraph?.nodes.count ?? 0)
+                .tag(NavSection.interactions)
 
-                NavigationLink(value: NavSection.dependencies) {
+                HStack {
                     Label("Dependencies", systemImage: "arrow.triangle.branch")
+                    Spacer()
+                    if viewModel.cpConfig.conflictCount > 0 {
+                        Text("\(viewModel.cpConfig.conflictCount)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.cpConfig.conflictCount)
+                .tag(NavSection.dependencies)
 
-                NavigationLink(value: NavSection.archaeology) {
+                HStack {
                     Label("Prompt History", systemImage: "clock.arrow.circlepath")
+                    Spacer()
+                    if viewModel.cpConfig.promptVersions.count > 0 {
+                        Text("\(viewModel.cpConfig.promptVersions.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.cpConfig.promptVersions.count)
+                .tag(NavSection.archaeology)
 
-                NavigationLink(value: NavSection.coverage) {
-                    Label("Capability Map", systemImage: "map")
-                }
+                Label("Capability Map", systemImage: "map")
+                    .tag(NavSection.coverage)
 
-                NavigationLink(value: NavSection.runtime) {
-                    Label("Runtime State", systemImage: "gauge.with.dots.needle.bottom.50percent")
-                }
+                Label("Runtime State", systemImage: "gauge.with.dots.needle.bottom.50percent")
+                    .tag(NavSection.runtime)
 
-                NavigationLink(value: NavSection.traces) {
+                HStack {
                     Label("Execution Traces", systemImage: "list.bullet.rectangle")
+                    Spacer()
+                    if viewModel.cpConfig.sessions.count > 0 {
+                        Text("\(viewModel.cpConfig.sessions.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .badge(viewModel.cpConfig.sessions.count)
+                .tag(NavSection.traces)
             }
         }
         .listStyle(.sidebar)
         .frame(minWidth: 200)
-        .onChange(of: selection) { _, newValue in
-            if let newValue = newValue {
-                viewModel.selectedSection = newValue
-            }
-        }
-        .onAppear {
-            selection = viewModel.selectedSection
-        }
     }
 }
 
@@ -132,6 +174,8 @@ struct DetailView: View {
     @ObservedObject var viewModel: ConfigViewModel
 
     var body: some View {
+        let _ = NSLog("[DetailView] Rendering with selectedSection: \(viewModel.selectedSection)")
+
         Group {
             switch viewModel.selectedSection {
             case .overview:

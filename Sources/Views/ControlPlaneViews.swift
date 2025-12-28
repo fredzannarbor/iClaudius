@@ -1279,7 +1279,7 @@ struct ExecutionTracesView: View {
     private var sessions: [SessionInfo] { viewModel.cpConfig.sessions }
 
     var body: some View {
-        let _ = print("[ExecutionTracesView] Rendering with \(sessions.count) sessions, \(traces.count) traces")
+        let _ = NSLog("[ExecutionTracesView] Rendering with \(sessions.count) sessions, \(traces.count) traces")
 
         VStack(spacing: 0) {
             // DEBUG: Simple test that always shows

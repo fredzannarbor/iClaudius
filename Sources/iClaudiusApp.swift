@@ -1,10 +1,22 @@
 import SwiftUI
+import os.log
+
+let logger = Logger(subsystem: "com.fred.iClaudius", category: "main")
 
 @main
 struct iClaudiusApp: App {
+    init() {
+        logger.info("🚀 App starting!")
+        NSLog("🚀 [iClaudiusApp] App starting!")
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    logger.info("🚀 ContentView appeared!")
+                    NSLog("🚀 [ContentView] View appeared!")
+                }
         }
         .windowStyle(.automatic)
         .commands {
