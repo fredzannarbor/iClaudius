@@ -28,9 +28,10 @@ struct ContentView: View {
 
 struct SidebarView: View {
     @ObservedObject var viewModel: ConfigViewModel
+    @State private var selection: NavSection? = .overview
 
     var body: some View {
-        List(selection: $viewModel.selectedSection) {
+        List(selection: $selection) {
             Section("Configuration") {
                 NavigationLink(value: NavSection.overview) {
                     Label("Overview", systemImage: "square.grid.2x2")
@@ -114,6 +115,14 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .frame(minWidth: 200)
+        .onChange(of: selection) { _, newValue in
+            if let newValue = newValue {
+                viewModel.selectedSection = newValue
+            }
+        }
+        .onAppear {
+            selection = viewModel.selectedSection
+        }
     }
 }
 
