@@ -13,6 +13,8 @@ actor ConfigScanner {
     func scanAll() async -> ClaudeConfiguration {
         var config = ClaudeConfiguration()
 
+        print("[ConfigScanner] Starting scan from home: \(homeDir)")
+
         async let mdFiles = scanClaudeMDFiles()
         async let commands = scanSlashCommands()
         async let plugins = scanPlugins()
@@ -22,12 +24,20 @@ actor ConfigScanner {
         async let accountInfo = scanAccountInfo()
 
         config.claudeMDFiles = await mdFiles
+        print("[ConfigScanner] Found \(config.claudeMDFiles.count) CLAUDE.md files")
+
         config.slashCommands = await commands
+        print("[ConfigScanner] Found \(config.slashCommands.count) slash commands")
+
         config.plugins = await plugins
         config.cronJobs = await crons
         config.settings = await settings
         config.localSettings = await localSettings
         config.accountInfo = await accountInfo
+
+        if let acc = config.accountInfo {
+            print("[ConfigScanner] Account: \(acc.username), \(acc.totalMessages) messages, \(acc.totalSessions) sessions")
+        }
 
         // Run health checks after loading all data
         config.healthIssues = checkHealth(config: config)
@@ -38,6 +48,7 @@ actor ConfigScanner {
         // Analyze capabilities
         config.capabilityAnalysis = analyzeCapabilities(config: config)
 
+        print("[ConfigScanner] Scan complete!")
         return config
     }
 

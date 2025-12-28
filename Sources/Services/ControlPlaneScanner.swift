@@ -13,14 +13,19 @@ actor ControlPlaneScanner {
     func scanControlPlane(baseConfig: ClaudeConfiguration) async -> ControlPlaneConfiguration {
         var cpConfig = ControlPlaneConfiguration()
 
+        print("[ControlPlaneScanner] Starting scan...")
+        print("[ControlPlaneScanner] Base config has \(baseConfig.claudeMDFiles.count) CLAUDE.md files")
+
         // Build entities from base config
         cpConfig.entities = buildEntities(from: baseConfig)
+        print("[ControlPlaneScanner] Built \(cpConfig.entities.count) entities")
 
         // Build dependency graph
         cpConfig.dependencies = buildDependencies(from: baseConfig)
 
         // Detect conflicts
         cpConfig.conflicts = detectConflicts(in: baseConfig)
+        print("[ControlPlaneScanner] Detected \(cpConfig.conflicts.count) conflicts")
 
         // Build permission surface
         cpConfig.permissionSurface = buildPermissionSurface(from: baseConfig)
@@ -30,10 +35,14 @@ actor ControlPlaneScanner {
 
         // Load execution traces
         cpConfig.executionTraces = await loadExecutionTraces()
+        print("[ControlPlaneScanner] Loaded \(cpConfig.executionTraces.count) execution traces")
+
         cpConfig.sessions = await loadSessions()
+        print("[ControlPlaneScanner] Loaded \(cpConfig.sessions.count) sessions")
 
         // Load prompt versions (archaeology)
         cpConfig.promptVersions = await loadPromptVersions(for: baseConfig.claudeMDFiles)
+        print("[ControlPlaneScanner] Loaded \(cpConfig.promptVersions.count) prompt versions")
 
         // Build capability coverage
         cpConfig.capabilityCoverage = buildCapabilityCoverage(from: baseConfig)
@@ -44,6 +53,7 @@ actor ControlPlaneScanner {
         // Get runtime state
         cpConfig.runtimeState = await getRuntimeState(baseConfig: baseConfig)
 
+        print("[ControlPlaneScanner] Scan complete!")
         return cpConfig
     }
 
