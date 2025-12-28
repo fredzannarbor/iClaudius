@@ -1282,20 +1282,24 @@ struct ExecutionTracesView: View {
 
                 Spacer()
 
-                Text("\(sessions.count) sessions")
+                Text("\(sessions.count) sessions, \(traces.count) traces")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             .padding()
 
-            // Summary bar
-            HStack {
-                Text("\(sessions.count) sessions")
-                    .font(.subheadline)
-                Spacer()
-                Text("\(traces.count) traces")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+            // Summary stats
+            HStack(spacing: 16) {
+                StatBadge(label: "Sessions", value: "\(sessions.count)", color: .blue)
+                StatBadge(label: "Traces", value: "\(traces.count)", color: .purple)
+
+                if let totalMessages = sessions.map({ $0.messageCount }).reduce(0, +) as Int?, totalMessages > 0 {
+                    StatBadge(label: "Messages", value: "\(totalMessages)", color: .green)
+                }
+
+                if let totalToolCalls = sessions.map({ $0.toolCallCount }).reduce(0, +) as Int?, totalToolCalls > 0 {
+                    StatBadge(label: "Tool Calls", value: "\(totalToolCalls)", color: .orange)
+                }
             }
             .padding()
             .background(Color.gray.opacity(0.1))
@@ -1309,29 +1313,79 @@ struct ExecutionTracesView: View {
                 )
             } else {
                 List {
-                    Section("Sessions") {
-                        ForEach(sessions) { session in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(session.startTime.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
+                    // Sessions section
+                    if !sessions.isEmpty {
+                        Section("Daily Activity (\(sessions.count) days)") {
+                            ForEach(sessions) { session in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(session.startTime.formatted(date: .abbreviated, time: .omitted))
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
 
-                                    Text("\(session.messageCount) messages, \(session.toolCallCount) tool calls")
+                                        HStack(spacing: 12) {
+                                            Label("\(session.messageCount)", systemImage: "message")
+                                            Label("\(session.toolCallCount)", systemImage: "wrench.and.screwdriver")
+                                        }
                                         .font(.caption)
                                         .foregroundColor(.secondary)
+
+                                        if !session.commandsUsed.isEmpty {
+                                            Text(session.commandsUsed.joined(separator: ", "))
+                                                .font(.caption2)
+                                                .foregroundColor(.blue)
+                                                .lineLimit(1)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    Text(session.status.rawValue)
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 2)
+                                        .background(colorFor(session.status.color).opacity(0.2))
+                                        .cornerRadius(4)
                                 }
-
-                                Spacer()
-
-                                Text(session.status.rawValue)
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 2)
-                                    .background(colorFor(session.status.color).opacity(0.2))
-                                    .cornerRadius(4)
+                                .padding(.vertical, 4)
                             }
-                            .padding(.vertical, 4)
+                        }
+                    }
+
+                    // Traces section
+                    if !traces.isEmpty {
+                        Section("Execution Traces (\(traces.count))") {
+                            ForEach(traces) { trace in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(trace.commandName)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+
+                                        Text(trace.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+
+                                        if !trace.toolCalls.isEmpty {
+                                            Text(trace.toolCalls.joined(separator: ", "))
+                                                .font(.caption2)
+                                                .foregroundColor(.purple)
+                                        }
+
+                                        if let tokens = trace.tokensUsed {
+                                            Text("\(tokens) tokens")
+                                                .font(.caption2)
+                                                .foregroundColor(.green)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: trace.status == .success ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                        .foregroundColor(trace.status == .success ? .green : .red)
+                                }
+                                .padding(.vertical, 4)
+                            }
                         }
                     }
                 }
@@ -1346,5 +1400,26 @@ struct ExecutionTracesView: View {
         case "red": return .red
         default: return .gray
         }
+    }
+}
+
+struct StatBadge: View {
+    let label: String
+    let value: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.headline)
+                .foregroundColor(color)
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(color.opacity(0.1))
+        .cornerRadius(8)
     }
 }

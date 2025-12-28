@@ -644,13 +644,17 @@ actor ControlPlaneScanner {
 
             // Try the dailyActivity format
             if let dailyActivity = json["dailyActivity"] as? [[String: Any]] {
-                for day in dailyActivity {
+                // Use simple date formatter for "YYYY-MM-DD" format
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                formatter.timeZone = TimeZone.current
+
+                for day in dailyActivity.suffix(30) { // Last 30 days
                     if let sessionCount = day["sessionCount"] as? Int,
                        let messageCount = day["messageCount"] as? Int,
                        let dateStr = day["date"] as? String,
                        sessionCount > 0 {
 
-                        let formatter = ISO8601DateFormatter()
                         if let date = formatter.date(from: dateStr) {
                             sessions.append(SessionInfo(
                                 id: dateStr,
@@ -666,7 +670,7 @@ actor ControlPlaneScanner {
                 }
             }
 
-            // If no dailyActivity, create summary from totals
+            // If no dailyActivity parsed, create summary from totals
             if sessions.isEmpty {
                 let messageCount = json["messageCount"] as? Int ?? 0
                 let sessionCount = json["sessionCount"] as? Int ?? 0
@@ -690,12 +694,15 @@ actor ControlPlaneScanner {
         if sessions.isEmpty {
             let projectsDir = "\(homeDir)/.claude/projects"
             if let projectDirs = try? fileManager.contentsOfDirectory(atPath: projectsDir) {
-                for (index, projectDir) in projectDirs.prefix(5).enumerated() {
+                for (index, projectDir) in projectDirs.prefix(10).enumerated() {
                     let projectPath = "\(projectsDir)/\(projectDir)"
                     var isDirectory: ObjCBool = false
                     if fileManager.fileExists(atPath: projectPath, isDirectory: &isDirectory), isDirectory.boolValue {
                         let attrs = try? fileManager.attributesOfItem(atPath: projectPath)
                         let modDate = attrs?[.modificationDate] as? Date ?? Date()
+
+                        // Clean up the directory name for display
+                        let displayName = projectDir.replacingOccurrences(of: "-", with: "/")
 
                         sessions.append(SessionInfo(
                             id: "project-\(index)",
@@ -703,13 +710,16 @@ actor ControlPlaneScanner {
                             endTime: nil,
                             messageCount: 0,
                             toolCallCount: 0,
-                            commandsUsed: [projectDir],
+                            commandsUsed: [displayName],
                             status: .completed
                         ))
                     }
                 }
             }
         }
+
+        // Sort by date descending
+        sessions.sort { $0.startTime > $1.startTime }
 
         return sessions
     }
