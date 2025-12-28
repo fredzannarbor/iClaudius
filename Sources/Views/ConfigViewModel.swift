@@ -9,8 +9,13 @@ class ConfigViewModel: ObservableObject {
     @Published var error: String?
     @Published var successMessage: String?
 
+    // Autonomous Improvement
+    @Published var autonomousSettings = AutonomousImprovementSettings()
+    @Published var autonomousChanges: [AutonomousChange] = []
+
     private let scanner = ConfigScanner()
     private let cpScanner = ControlPlaneScanner()
+    private let improvementService = AutonomousImprovementService()
 
     func load() async {
         // Small delay to ensure view has finished initial render
@@ -26,10 +31,16 @@ class ConfigViewModel: ObservableObject {
         let newConfig = await scanner.scanAll()
         let newCpConfig = await cpScanner.scanControlPlane(baseConfig: newConfig)
 
+        // Load autonomous improvement state
+        let aiSettings = await improvementService.getSettings()
+        let aiChanges = await improvementService.getChanges()
+
         // Update on main thread after a brief yield
         await MainActor.run {
             self.config = newConfig
             self.cpConfig = newCpConfig
+            self.autonomousSettings = aiSettings
+            self.autonomousChanges = aiChanges
             self.isLoading = false
         }
     }
@@ -95,6 +106,52 @@ class ConfigViewModel: ObservableObject {
             await refresh()
         } catch {
             self.error = "Failed to create \(isSkill ? "skill" : "command"): \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Autonomous Improvement
+
+    func loadAutonomousState() async {
+        let settings = await improvementService.getSettings()
+        let changes = await improvementService.getChanges()
+
+        await MainActor.run {
+            self.autonomousSettings = settings
+            self.autonomousChanges = changes
+        }
+    }
+
+    func toggleAutonomousImprovement(_ enabled: Bool) async {
+        await improvementService.setEnabled(enabled)
+        autonomousSettings.enabled = enabled
+    }
+
+    func updateAutonomousSettings(_ settings: AutonomousImprovementSettings) async {
+        await improvementService.updateSettings(settings)
+        autonomousSettings = settings
+    }
+
+    func revertAutonomousChange(id: UUID) async {
+        let result = await improvementService.revertChange(id: id)
+        switch result {
+        case .success:
+            successMessage = "Change reverted successfully"
+            await loadAutonomousState()
+            await refresh()
+        case .failure(let error):
+            self.error = "Failed to revert: \(error.localizedDescription)"
+        }
+    }
+
+    func revertAllAutonomousChanges() async {
+        let result = await improvementService.revertAllChanges()
+        switch result {
+        case .success(let count):
+            successMessage = "Reverted \(count) change\(count == 1 ? "" : "s")"
+            await loadAutonomousState()
+            await refresh()
+        case .failure(let error):
+            self.error = "Failed to revert all: \(error.localizedDescription)"
         }
     }
 }

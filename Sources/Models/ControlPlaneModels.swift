@@ -647,3 +647,138 @@ struct ControlPlaneConfiguration {
         safetyDashboard?.autonomousLoops.count ?? 0
     }
 }
+
+// MARK: - Autonomous Improvement System
+
+/// Tracks settings for autonomous improvement feature
+struct AutonomousImprovementSettings: Codable {
+    var enabled: Bool = false
+    var confidenceThreshold: Double = 0.85  // Only make changes with >= 85% confidence
+    var allowPromptEdits: Bool = true
+    var allowSkillCreation: Bool = true
+    var allowCommandCreation: Bool = true
+    var requireApprovalForMajorChanges: Bool = true
+    var maxChangesPerDay: Int = 5
+    var lastUpdated: Date = Date()
+}
+
+/// Represents a single autonomous change made by Claude
+struct AutonomousChange: Identifiable, Codable {
+    let id: UUID
+    let timestamp: Date
+    let changeType: ChangeType
+    let description: String
+    let rationale: String
+    let confidence: Double  // 0.0 to 1.0
+    let affectedFile: String
+    let originalContent: String?  // For reversion
+    let newContent: String?
+    var reverted: Bool = false
+    var revertedAt: Date?
+
+    enum ChangeType: String, Codable, CaseIterable {
+        case promptEdit = "Prompt Edit"
+        case skillCreated = "Skill Created"
+        case commandCreated = "Command Created"
+        case settingModified = "Setting Modified"
+        case hookAdded = "Hook Added"
+
+        var icon: String {
+            switch self {
+            case .promptEdit: return "doc.text.fill"
+            case .skillCreated: return "wand.and.stars"
+            case .commandCreated: return "terminal.fill"
+            case .settingModified: return "gearshape.fill"
+            case .hookAdded: return "arrow.triangle.branch"
+            }
+        }
+
+        var color: String {
+            switch self {
+            case .promptEdit: return "blue"
+            case .skillCreated: return "purple"
+            case .commandCreated: return "green"
+            case .settingModified: return "orange"
+            case .hookAdded: return "teal"
+            }
+        }
+    }
+
+    init(changeType: ChangeType, description: String, rationale: String,
+         confidence: Double, affectedFile: String,
+         originalContent: String?, newContent: String?) {
+        self.id = UUID()
+        self.timestamp = Date()
+        self.changeType = changeType
+        self.description = description
+        self.rationale = rationale
+        self.confidence = confidence
+        self.affectedFile = affectedFile
+        self.originalContent = originalContent
+        self.newContent = newContent
+    }
+}
+
+/// Observation about user behavior that might inform improvements
+struct UserBehaviorObservation: Identifiable, Codable {
+    let id: UUID
+    let timestamp: Date
+    let observationType: ObservationType
+    let details: String
+    let frequency: Int  // How often this pattern was observed
+
+    enum ObservationType: String, Codable {
+        case repeatedCommand = "Repeated Command Pattern"
+        case errorPattern = "Common Error Pattern"
+        case workflowGap = "Workflow Gap"
+        case preferenceSignal = "Preference Signal"
+        case efficiencyOpportunity = "Efficiency Opportunity"
+    }
+
+    init(observationType: ObservationType, details: String, frequency: Int = 1) {
+        self.id = UUID()
+        self.timestamp = Date()
+        self.observationType = observationType
+        self.details = details
+        self.frequency = frequency
+    }
+}
+
+/// Container for all autonomous improvement data
+struct AutonomousImprovementState: Codable {
+    var settings: AutonomousImprovementSettings = AutonomousImprovementSettings()
+    var changes: [AutonomousChange] = []
+    var observations: [UserBehaviorObservation] = []
+    var changesTodayCount: Int {
+        let today = Calendar.current.startOfDay(for: Date())
+        return changes.filter {
+            !$0.reverted && Calendar.current.startOfDay(for: $0.timestamp) == today
+        }.count
+    }
+
+    var pendingChanges: [AutonomousChange] {
+        changes.filter { !$0.reverted }
+    }
+
+    var revertedChanges: [AutonomousChange] {
+        changes.filter { $0.reverted }
+    }
+
+    mutating func revertChange(id: UUID) -> Bool {
+        guard let index = changes.firstIndex(where: { $0.id == id }) else {
+            return false
+        }
+        changes[index].reverted = true
+        changes[index].revertedAt = Date()
+        return true
+    }
+
+    mutating func revertAllChanges() {
+        for i in changes.indices {
+            if !changes[i].reverted {
+                changes[i].reverted = true
+                changes[i].revertedAt = Date()
+            }
+        }
+    }
+}

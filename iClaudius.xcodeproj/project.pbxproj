@@ -16,6 +16,7 @@
 		A1000007 /* ConfigScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007; };
 		A1000008 /* ControlPlaneScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008; };
 		A1000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000009; };
+		A1000010 /* AutonomousImprovementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 		A2000007 /* ConfigScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigScanner.swift; sourceTree = "<group>"; };
 		A2000008 /* ControlPlaneScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPlaneScanner.swift; sourceTree = "<group>"; };
 		A2000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A2000012 /* AutonomousImprovementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutonomousImprovementService.swift; sourceTree = "<group>"; };
 		A2000010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A2000011 /* iClaudius.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iClaudius.entitlements; sourceTree = "<group>"; };
 		A3000001 /* iClaudius.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iClaudius.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -88,6 +90,7 @@
 			children = (
 				A2000007 /* ConfigScanner.swift */,
 				A2000008 /* ControlPlaneScanner.swift */,
+				A2000012 /* AutonomousImprovementService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -187,6 +190,7 @@
 				A1000006 /* ControlPlaneModels.swift in Sources */,
 				A1000007 /* ConfigScanner.swift in Sources */,
 				A1000008 /* ControlPlaneScanner.swift in Sources */,
+				A1000010 /* AutonomousImprovementService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

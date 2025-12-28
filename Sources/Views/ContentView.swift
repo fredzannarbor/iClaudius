@@ -161,6 +161,17 @@ struct SidebarView: View {
                     }
                 }
                 .tag(NavSection.traces)
+
+                HStack {
+                    Label("Autonomous Tuning", systemImage: "wand.and.stars")
+                    Spacer()
+                    if viewModel.autonomousSettings.enabled {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 8, height: 8)
+                    }
+                }
+                .tag(NavSection.autonomous)
             }
         }
         .listStyle(.sidebar)
@@ -209,6 +220,8 @@ struct DetailView: View {
                 RuntimeStateView(state: viewModel.cpConfig.runtimeState, viewModel: viewModel)
             case .traces:
                 ExecutionTracesView(viewModel: viewModel)
+            case .autonomous:
+                AutonomousImprovementView(viewModel: viewModel)
             }
         }
         .frame(minWidth: 500)
@@ -2193,4 +2206,5 @@ enum NavSection: Hashable {
     case coverage
     case runtime
     case traces
+    case autonomous
 }

@@ -1442,3 +1442,364 @@ struct StatBadge: View {
         .cornerRadius(8)
     }
 }
+
+// MARK: - Autonomous Improvement View
+
+struct AutonomousImprovementView: View {
+    @ObservedObject var viewModel: ConfigViewModel
+    @State private var showSettings = false
+    @State private var showRevertConfirmation = false
+    @State private var selectedChangeToRevert: AutonomousChange?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Header with master toggle
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Autonomous Preference Alignment")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+
+                        Text("Allow Claude to autonomously improve your control plane configuration")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: Binding(
+                        get: { viewModel.autonomousSettings.enabled },
+                        set: { newValue in
+                            Task { await viewModel.toggleAutonomousImprovement(newValue) }
+                        }
+                    ))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                }
+
+                // Status Card
+                GroupBox {
+                    HStack(spacing: 20) {
+                        VStack {
+                            Image(systemName: viewModel.autonomousSettings.enabled ? "wand.and.stars" : "wand.and.stars.inverse")
+                                .font(.system(size: 40))
+                                .foregroundColor(viewModel.autonomousSettings.enabled ? .purple : .gray)
+
+                            Text(viewModel.autonomousSettings.enabled ? "Active" : "Disabled")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(viewModel.autonomousSettings.enabled ? .purple : .secondary)
+                        }
+
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Changes Made")
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text("\(viewModel.autonomousChanges.filter { !$0.reverted }.count)")
+                                    .fontWeight(.bold)
+                            }
+
+                            HStack {
+                                Text("Reverted")
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text("\(viewModel.autonomousChanges.filter { $0.reverted }.count)")
+                                    .fontWeight(.bold)
+                            }
+
+                            HStack {
+                                Text("Confidence Threshold")
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text("\(Int(viewModel.autonomousSettings.confidenceThreshold * 100))%")
+                                    .fontWeight(.bold)
+                            }
+
+                            HStack {
+                                Text("Daily Limit")
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text("\(viewModel.autonomousSettings.maxChangesPerDay)")
+                                    .fontWeight(.bold)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        Divider()
+
+                        VStack(spacing: 12) {
+                            Button(action: { showSettings = true }) {
+                                Label("Settings", systemImage: "gearshape")
+                            }
+                            .buttonStyle(.bordered)
+
+                            if !viewModel.autonomousChanges.filter({ !$0.reverted }).isEmpty {
+                                Button(action: { showRevertConfirmation = true }) {
+                                    Label("Revert All", systemImage: "arrow.uturn.backward")
+                                }
+                                .buttonStyle(.bordered)
+                                .foregroundColor(.red)
+                            }
+                        }
+                    }
+                    .padding()
+                }
+
+                // Explanation
+                if !viewModel.autonomousSettings.enabled {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(.blue)
+                                Text("How It Works")
+                                    .font(.headline)
+                            }
+
+                            Text("""
+                            When enabled, Claude will monitor your usage patterns and may autonomously:
+
+                            • **Edit prompts** in CLAUDE.md files to better match your preferences
+                            • **Create skills** for repeated workflows you perform manually
+                            • **Add commands** that would streamline your common tasks
+
+                            All changes require high confidence (\(Int(viewModel.autonomousSettings.confidenceThreshold * 100))%+) and are fully reversible. \
+                            Every change is tracked with its rationale, and you can revert any or all changes instantly.
+                            """)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        }
+                        .padding()
+                    }
+                }
+
+                // Changes List
+                if !viewModel.autonomousChanges.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Change History")
+                            .font(.headline)
+
+                        ForEach(viewModel.autonomousChanges) { change in
+                            AutonomousChangeCard(
+                                change: change,
+                                onRevert: {
+                                    selectedChangeToRevert = change
+                                }
+                            )
+                        }
+                    }
+                } else if viewModel.autonomousSettings.enabled {
+                    GroupBox {
+                        VStack(spacing: 12) {
+                            Image(systemName: "clock")
+                                .font(.largeTitle)
+                                .foregroundColor(.secondary)
+                            Text("No changes yet")
+                                .font(.headline)
+                            Text("Claude is monitoring your usage and will suggest improvements when confident they'll help.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                    }
+                }
+
+                Spacer()
+            }
+            .padding()
+        }
+        .sheet(isPresented: $showSettings) {
+            AutonomousSettingsSheet(viewModel: viewModel)
+        }
+        .alert("Revert Change?", isPresented: Binding(
+            get: { selectedChangeToRevert != nil },
+            set: { if !$0 { selectedChangeToRevert = nil } }
+        )) {
+            Button("Cancel", role: .cancel) { selectedChangeToRevert = nil }
+            Button("Revert", role: .destructive) {
+                if let change = selectedChangeToRevert {
+                    Task { await viewModel.revertAutonomousChange(id: change.id) }
+                }
+                selectedChangeToRevert = nil
+            }
+        } message: {
+            if let change = selectedChangeToRevert {
+                Text("This will restore \(change.affectedFile) to its original state.")
+            }
+        }
+        .alert("Revert All Changes?", isPresented: $showRevertConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Revert All", role: .destructive) {
+                Task { await viewModel.revertAllAutonomousChanges() }
+            }
+        } message: {
+            Text("This will restore all files to their original state before Claude made changes.")
+        }
+    }
+}
+
+struct AutonomousChangeCard: View {
+    let change: AutonomousChange
+    let onRevert: () -> Void
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                // Header
+                HStack {
+                    Image(systemName: change.changeType.icon)
+                        .foregroundColor(colorFor(change.changeType.color))
+
+                    Text(change.changeType.rawValue)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+
+                    Spacer()
+
+                    Text(change.timestamp.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    if change.reverted {
+                        Text("REVERTED")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.orange.opacity(0.2))
+                            .cornerRadius(4)
+                    }
+                }
+
+                // Description
+                Text(change.description)
+                    .font(.headline)
+
+                // Rationale
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "lightbulb")
+                        .foregroundColor(.yellow)
+                        .font(.caption)
+                    Text(change.rationale)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                // Confidence & File
+                HStack {
+                    HStack(spacing: 4) {
+                        Text("Confidence:")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("\(Int(change.confidence * 100))%")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(change.confidence >= 0.9 ? .green : .orange)
+                    }
+
+                    Spacer()
+
+                    Text(URL(fileURLWithPath: change.affectedFile).lastPathComponent)
+                        .font(.caption)
+                        .fontDesign(.monospaced)
+                        .foregroundColor(.secondary)
+                }
+
+                // Revert button
+                if !change.reverted {
+                    HStack {
+                        Spacer()
+                        Button(action: onRevert) {
+                            Label("Revert", systemImage: "arrow.uturn.backward")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .opacity(change.reverted ? 0.6 : 1.0)
+    }
+
+    func colorFor(_ name: String) -> Color {
+        switch name {
+        case "blue": return .blue
+        case "purple": return .purple
+        case "green": return .green
+        case "orange": return .orange
+        case "teal": return .teal
+        default: return .gray
+        }
+    }
+}
+
+struct AutonomousSettingsSheet: View {
+    @ObservedObject var viewModel: ConfigViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var settings: AutonomousImprovementSettings
+
+    init(viewModel: ConfigViewModel) {
+        self.viewModel = viewModel
+        _settings = State(initialValue: viewModel.autonomousSettings)
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Autonomous Improvement Settings")
+                .font(.headline)
+
+            Form {
+                Section("Allowed Actions") {
+                    Toggle("Edit prompts (CLAUDE.md files)", isOn: $settings.allowPromptEdits)
+                    Toggle("Create new skills", isOn: $settings.allowSkillCreation)
+                    Toggle("Create new commands", isOn: $settings.allowCommandCreation)
+                }
+
+                Section("Safety") {
+                    HStack {
+                        Text("Confidence Threshold")
+                        Spacer()
+                        Text("\(Int(settings.confidenceThreshold * 100))%")
+                            .foregroundColor(.secondary)
+                    }
+                    Slider(value: $settings.confidenceThreshold, in: 0.7...0.99, step: 0.01)
+
+                    HStack {
+                        Text("Max Changes Per Day")
+                        Spacer()
+                        Stepper("\(settings.maxChangesPerDay)", value: $settings.maxChangesPerDay, in: 1...20)
+                    }
+
+                    Toggle("Require approval for major changes", isOn: $settings.requireApprovalForMajorChanges)
+                }
+            }
+            .formStyle(.grouped)
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.escape)
+
+                Spacer()
+
+                Button("Save") {
+                    Task {
+                        await viewModel.updateAutonomousSettings(settings)
+                        dismiss()
+                    }
+                }
+                .keyboardShortcut(.return)
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding()
+        .frame(width: 500, height: 450)
+    }
+}
