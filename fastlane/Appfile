@@ -1,0 +1,16 @@
+# App Store Connect App ID and Bundle ID
+app_identifier("com.fred.iClaudius")  # Bundle identifier
+
+# Your Apple Developer account email
+apple_id("wfz@nimblebooks.com")
+
+# Team ID
+team_id("G33U644FJ6")
+
+# For App Store Connect API (recommended for CI/CD)
+# Generate a key at: https://appstoreconnect.apple.com/access/api
+# app_store_connect_api_key(
+#   key_id: "XXXXXXXXXX",
+#   issuer_id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+#   key_filepath: "./AuthKey_XXXXXXXXXX.p8"
+# )

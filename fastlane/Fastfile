@@ -1,0 +1,141 @@
+# iClaudius Fastfile
+# Fastlane configuration for building and distributing iClaudius
+
+default_platform(:mac)
+
+platform :mac do
+
+  # ============================================
+  # DEVELOPMENT
+  # ============================================
+
+  desc "Build for local development (no sandbox)"
+  lane :build_dev do
+    build_mac_app(
+      scheme: "iClaudius",
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build",
+      output_name: "iClaudius-Dev.app"
+    )
+  end
+
+  # ============================================
+  # APP STORE
+  # ============================================
+
+  desc "Build and archive for App Store submission"
+  lane :build_release do
+    # Increment build number based on current App Store version
+    increment_build_number(
+      build_number: Time.now.strftime("%Y%m%d%H%M")
+    )
+
+    build_mac_app(
+      scheme: "iClaudius",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "iClaudius.app"
+    )
+  end
+
+  desc "Upload to App Store Connect (TestFlight)"
+  lane :upload_testflight do
+    build_release
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      apple_id: ENV["APPLE_ID"] || "",
+      team_id: ENV["TEAM_ID"] || ""
+    )
+  end
+
+  desc "Upload to App Store for review"
+  lane :upload_appstore do
+    build_release
+
+    upload_to_app_store(
+      force: true,
+      skip_screenshots: true,
+      skip_metadata: false,
+      submit_for_review: false,  # Set to true to auto-submit
+      automatic_release: false,
+      precheck_include_in_app_purchases: false
+    )
+  end
+
+  # ============================================
+  # DIRECT DISTRIBUTION (Developer ID)
+  # ============================================
+
+  desc "Build for direct distribution (notarized DMG)"
+  lane :build_dmg do
+    build_mac_app(
+      scheme: "iClaudius",
+      configuration: "Release",
+      export_method: "developer-id",
+      output_directory: "./build",
+      output_name: "iClaudius.app"
+    )
+
+    # Notarize the app
+    notarize(
+      package: "./build/iClaudius.app",
+      bundle_id: "com.fred.iClaudius"
+    )
+
+    # Create DMG
+    sh("hdiutil create -volname 'iClaudius' -srcfolder ./build/iClaudius.app -ov -format UDZO ./build/iClaudius.dmg")
+
+    UI.success("DMG created at ./build/iClaudius.dmg")
+  end
+
+  # ============================================
+  # UTILITIES
+  # ============================================
+
+  desc "Run tests"
+  lane :test do
+    run_tests(
+      scheme: "iClaudius",
+      configuration: "Debug"
+    )
+  end
+
+  desc "Take screenshots for App Store"
+  lane :screenshots do
+    capture_mac_screenshots(
+      scheme: "iClaudiusUITests",
+      output_directory: "./fastlane/screenshots"
+    )
+  end
+
+  desc "Sync code signing certificates"
+  lane :sync_certs do
+    match(
+      type: "appstore",
+      app_identifier: "com.fred.iClaudius",
+      readonly: true
+    )
+  end
+
+  # ============================================
+  # VERSIONING
+  # ============================================
+
+  desc "Bump version number"
+  lane :bump_version do |options|
+    version = options[:version] || prompt(text: "Enter new version number (e.g., 2.3.0): ")
+
+    update_info_plist(
+      plist_path: "./Sources/Resources/Info.plist",
+      block: proc do |plist|
+        plist["CFBundleShortVersionString"] = version
+      end
+    )
+
+    UI.success("Version bumped to #{version}")
+  end
+
+end

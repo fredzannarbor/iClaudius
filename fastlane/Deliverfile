@@ -1,0 +1,44 @@
+# Deliverfile for iClaudius
+# Configure fastlane deliver for App Store submission
+
+# App identifier
+app_identifier "com.fred.iClaudius"
+
+# Platform
+platform "osx"
+
+# Skip binary upload (we'll do that separately via Xcode)
+skip_binary_upload true
+
+# Skip app version check
+skip_app_version_update false
+
+# Force to overwrite existing metadata
+force true
+
+# Skip screenshots for now if there are issues
+# skip_screenshots true
+
+# Metadata path
+metadata_path "./fastlane/metadata"
+
+# Screenshots path
+screenshots_path "./fastlane/screenshots"
+
+# Automatic submission
+submit_for_review false
+
+# Price tier - set manually in App Store Connect (fastlane API issue)
+# price_tier 0
+
+# App rating config (if needed)
+# app_rating_config_path "./fastlane/rating_config.json"
+
+# Copyright
+copyright "2024 Fred Zimmerman"
+
+# Primary category
+primary_category "DEVELOPER_TOOLS"
+
+# Reject if there's any warning
+reject_if_possible false

@@ -1,0 +1,23 @@
+iClaudius is a native macOS app for managing and visualizing your Claude Code configuration.
+
+FEATURES:
+
+• Control Plane Overview - See all your CLAUDE.md files, commands, skills, and plugins in one place
+
+• Safety Dashboard - Monitor autonomous loops, detect conflicts, and ensure safe operation
+
+• Execution Traces - View session history, command usage, and tool call patterns
+
+• Prompt Archaeology - Track changes to your prompts over time
+
+• Autonomous Preference Alignment - Let Claude autonomously improve your configuration based on usage patterns (optional, reversible)
+
+• Dependency Graph - Visualize relationships between your configuration entities
+
+DESIGNED FOR DEVELOPERS:
+
+iClaudius helps developers who use Claude Code understand and manage their configuration across projects. Whether you have custom commands, MCP servers, or complex CLAUDE.md hierarchies, iClaudius gives you visibility into how Claude is configured.
+
+PRIVACY:
+
+iClaudius reads your local ~/.claude directory to display configuration. No data is sent to external servers. All processing happens locally on your Mac.

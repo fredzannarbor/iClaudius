@@ -1,0 +1,32 @@
+# Snapfile - Fastlane screenshot configuration for iClaudius
+
+# Devices to capture screenshots on
+devices([
+  "Mac"
+])
+
+# Languages for screenshots
+languages([
+  "en-US"
+])
+
+# Xcode scheme (main app scheme - Fastlane runs UI tests from this)
+scheme("iClaudius")
+
+# Output directory
+output_directory("./fastlane/screenshots")
+
+# Clear previous screenshots
+clear_previous_screenshots(true)
+
+# Stop after first error
+stop_after_first_error(true)
+
+# Skip open summary
+skip_open_summary(true)
+
+# Override status bar (not applicable for Mac, but included for reference)
+# override_status_bar(true)
+
+# Number of concurrent simulators (Mac only has one)
+concurrent_simulators(false)

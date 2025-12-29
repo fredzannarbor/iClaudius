@@ -7,17 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1000001 /* iClaudiusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001; };
-		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002; };
-		A1000003 /* ConfigViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003; };
-		A1000004 /* ControlPlaneViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004; };
-		A1000005 /* ClaudeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005; };
-		A1000006 /* ControlPlaneModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006; };
-		A1000007 /* ConfigScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007; };
-		A1000008 /* ControlPlaneScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008; };
-		A1000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000009; };
-		A1000010 /* AutonomousImprovementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012; };
+		A1000001 /* iClaudiusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* iClaudiusApp.swift */; };
+		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* ContentView.swift */; };
+		A1000003 /* ConfigViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* ConfigViewModel.swift */; };
+		A1000004 /* ControlPlaneViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* ControlPlaneViews.swift */; };
+		A1000005 /* ClaudeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* ClaudeModels.swift */; };
+		A1000006 /* ControlPlaneModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* ControlPlaneModels.swift */; };
+		A1000007 /* ConfigScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* ConfigScanner.swift */; };
+		A1000008 /* ControlPlaneScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008 /* ControlPlaneScanner.swift */; };
+		A1000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000009 /* Assets.xcassets */; };
+		A1000010 /* AutonomousImprovementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012 /* AutonomousImprovementService.swift */; };
+		B1000001 /* ScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* ScreenshotTests.swift */; };
+		B1000002 /* SnapshotHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* SnapshotHelper.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B9000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A8000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A6000001;
+			remoteInfo = iClaudius;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A2000001 /* iClaudiusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iClaudiusApp.swift; sourceTree = "<group>"; };
@@ -29,14 +41,25 @@
 		A2000007 /* ConfigScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigScanner.swift; sourceTree = "<group>"; };
 		A2000008 /* ControlPlaneScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPlaneScanner.swift; sourceTree = "<group>"; };
 		A2000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A2000012 /* AutonomousImprovementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutonomousImprovementService.swift; sourceTree = "<group>"; };
 		A2000010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A2000011 /* iClaudius.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iClaudius.entitlements; sourceTree = "<group>"; };
+		A2000013 /* iClaudius.entitlements.release */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "iClaudius.entitlements.release"; sourceTree = "<group>"; };
+		A2000012 /* AutonomousImprovementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutonomousImprovementService.swift; sourceTree = "<group>"; };
 		A3000001 /* iClaudius.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iClaudius.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2000001 /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
+		B2000002 /* SnapshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotHelper.swift; sourceTree = "<group>"; };
+		B3000001 /* iClaudiusUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iClaudiusUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A4000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B4000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -50,6 +73,7 @@
 			isa = PBXGroup;
 			children = (
 				A5000002 /* Sources */,
+				B5000001 /* iClaudiusUITests */,
 				A5000006 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -99,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				A3000001 /* iClaudius.app */,
+				B3000001 /* iClaudiusUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -109,8 +134,18 @@
 				A2000009 /* Assets.xcassets */,
 				A2000010 /* Info.plist */,
 				A2000011 /* iClaudius.entitlements */,
+				A2000013 /* iClaudius.entitlements.release */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		B5000001 /* iClaudiusUITests */ = {
+			isa = PBXGroup;
+			children = (
+				B2000001 /* ScreenshotTests.swift */,
+				B2000002 /* SnapshotHelper.swift */,
+			);
+			path = iClaudiusUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -133,6 +168,24 @@
 			productReference = A3000001 /* iClaudius.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B6000001 /* iClaudiusUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B7000003 /* Build configuration list for PBXNativeTarget "iClaudiusUITests" */;
+			buildPhases = (
+				B6000002 /* Sources */,
+				B4000001 /* Frameworks */,
+				B6000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B8000001 /* PBXTargetDependency */,
+			);
+			name = iClaudiusUITests;
+			productName = iClaudiusUITests;
+			productReference = B3000001 /* iClaudiusUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -141,10 +194,14 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					A6000001 = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					B6000001 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = A6000001;
 					};
 				};
 			};
@@ -162,6 +219,7 @@
 			projectRoot = "";
 			targets = (
 				A6000001 /* iClaudius */,
+				B6000001 /* iClaudiusUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -172,6 +230,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000009 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B6000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -194,7 +259,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B6000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000001 /* ScreenshotTests.swift in Sources */,
+				B1000002 /* SnapshotHelper.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B8000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A6000001 /* iClaudius */;
+			targetProxy = B9000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A7000002 /* Debug */ = {
@@ -231,6 +313,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -254,6 +337,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -293,6 +377,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -309,6 +394,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -321,9 +407,12 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/Resources/iClaudius.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				CURRENT_PROJECT_VERSION = 202512282013;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = G33U644FJ6;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = iClaudius;
@@ -333,7 +422,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fred.iClaudius;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -346,12 +435,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Sources/Resources/iClaudius.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Sources/Resources/iClaudius.entitlements.release";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				CURRENT_PROJECT_VERSION = 202512282013;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = G33U644FJ6;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = iClaudius;
@@ -361,11 +453,45 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fred.iClaudius;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B7000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 202512282013;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = G33U644FJ6;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 2.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fred.iClaudiusUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = iClaudius;
+			};
+			name = Debug;
+		};
+		B7000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 202512282013;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = G33U644FJ6;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 2.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fred.iClaudiusUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = iClaudius;
 			};
 			name = Release;
 		};
@@ -386,6 +512,15 @@
 			buildConfigurations = (
 				A7000005 /* Debug */,
 				A7000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B7000003 /* Build configuration list for PBXNativeTarget "iClaudiusUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B7000005 /* Debug */,
+				B7000006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
